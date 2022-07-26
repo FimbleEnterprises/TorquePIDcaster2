@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "778505073517",
+    "project_id": "pidcaster-ii",
+    "storage_bucket": "pidcaster-ii.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:778505073517:android:27c75140b29caa6a5a6064",
+        "android_client_info": {
+          "package_name": "com.fimbleenterprises.torquepidcaster"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "778505073517-le4dchp2t5b4nk2j70pr7g4hbeupcjsk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5qcQ6IO8Ft1nte4aag34dfux-T_uGAmI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "778505073517-le4dchp2t5b4nk2j70pr7g4hbeupcjsk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

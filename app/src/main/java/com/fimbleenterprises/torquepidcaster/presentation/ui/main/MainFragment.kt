@@ -60,7 +60,7 @@ class MainFragment : Fragment() {
                 false, 
                 true, 
                 true
-            )}"
+            )}|"
         }
 
         viewmodel.triggeredPids.observe(viewLifecycleOwner) {

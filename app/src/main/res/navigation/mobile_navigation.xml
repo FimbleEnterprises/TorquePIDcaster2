@@ -16,4 +16,10 @@
         android:name="com.fimbleenterprises.torquepidcaster.presentation.ui.choosepids.ChoosePidsFragment"
         android:label="@string/title_choosepids"
         tools:layout="@layout/fragment_choose_pids" />
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.fimbleenterprises.torquepidcaster.presentation.ui.settings.SettingsFragment"
+        android:label="@string/menu_title_settings"
+        tools:layout="@layout/fragment_blank" />
 </navigation>

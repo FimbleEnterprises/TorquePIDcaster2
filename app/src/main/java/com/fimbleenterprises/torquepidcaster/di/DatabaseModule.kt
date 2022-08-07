@@ -3,6 +3,7 @@ package com.fimbleenterprises.torquepidcaster.di
 import android.app.Application
 import android.util.Log
 import androidx.room.Room
+import com.fimbleenterprises.torquepidcaster.data.db.LogsDao
 import com.fimbleenterprises.torquepidcaster.data.db.PidsDao
 import com.fimbleenterprises.torquepidcaster.data.db.PidsDatabase
 import dagger.Module
@@ -34,6 +35,12 @@ class DatabaseModule {
     @Provides
     fun providePidsDAO(pidsDb: PidsDatabase): PidsDao {
         return pidsDb.getPidsDao()
+    }
+
+    @Singleton
+    @Provides
+    fun provideLogsDAO(pidsDb: PidsDatabase): LogsDao {
+        return pidsDb.getLogsDao()
     }
 
     init { Log.i(TAG, "Initialized:DatabaseModule") }

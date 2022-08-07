@@ -1,0 +1,73 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <PreferenceCategory
+        app:key="PREF_CATEGORY_SERVICE"
+        app:title="Service">
+
+        <SwitchPreference
+            app:defaultValue="true"
+            app:key="PREF_START_SERVICE_WITH_TORQUE"
+            app:summary="@string/pref_start_with_torque_summary"
+            app:isPreferenceVisible="true"
+            app:title="@string/pref_start_service_with_torque"
+            app:switchTextOn="@string/pref_start_service_with_torque_on"
+            app:switchTextOff="@string/pref_start_service_with_torque_off" />
+
+        <ListPreference
+            app:defaultValue="500"
+            app:summary="@string/pref_scan_interval_summary"
+            app:entries="@array/scan_interval_names"
+            app:entryValues="@array/scan_interval_values"
+            app:key="PREF_SCAN_INTERVAL"
+            app:title="@string/scan_rate" />
+
+    </PreferenceCategory>
+
+
+    <PreferenceCategory
+        app:key="PREF_CATEGORY_SERVICE"
+        app:title="Operating System">
+
+        <Preference
+            app:title="@string/pref_fix_battery"
+            android:summary="@string/pref_go_to_app_settings_summary"
+            app:key="PREF_BATT_OPT" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="PREF_CATEGORY_BROADCASTS"
+        app:title="Broadcasts">
+
+        <EditTextPreference
+            app:key="PREF_WHILE_CONNECTED_ACTION"
+            app:title="@string/when_connected_broadcast"
+            app:summary="@string/default_broadcast_summary_connected"
+            app:defaultValue="@string/when_connected_broadcast_value" />
+
+        <EditTextPreference
+            app:key="PREF_WHILE_DISCONNECTED_ACTION"
+            app:title="@string/when_disconnected_broadcast"
+            app:summary="@string/default_broadcast_summary_disconnected"
+            app:defaultValue="@string/when_disconnected_broadcast_value"  />
+
+    </PreferenceCategory>
+
+    <!-- NOT CURRENTLY IMPLEMENTED -->
+
+    <!--<Preference
+        app:title="@string/pref_privacy_policy"
+        app:key="PREF_PRIVACY_POLICY" />-->
+
+    <!--<SwitchPreference
+        app:defaultValue="false"
+        app:key="PREF_USE_IMPERIAL"
+        app:isPreferenceVisible="false"
+        app:title="@string/use_imperial_preference_title"
+        app:switchTextOn="@string/pref_text_on_using_metric_values"
+        app:switchTextOff="@string/pref_text_off_using_imperial_values"
+        app:useSimpleSummaryProvider="true" />-->
+
+</PreferenceScreen>

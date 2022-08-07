@@ -6,9 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.fimbleenterprises.torquepidcaster.domain.service.ServiceMessenger
-import com.fimbleenterprises.torquepidcaster.domain.usecases.DeletePidUseCase
-import com.fimbleenterprises.torquepidcaster.domain.usecases.GetSavedPidsUseCase
-import com.fimbleenterprises.torquepidcaster.domain.usecases.SavePidUseCase
+import com.fimbleenterprises.torquepidcaster.domain.usecases.*
 import javax.inject.Singleton
 
 /**
@@ -27,7 +25,10 @@ class MainViewModelFactory(
     private val serviceMessenger: ServiceMessenger,
     private val savePidUseCase: SavePidUseCase,
     private val getSavedPidsUseCase: GetSavedPidsUseCase,
-    private val deletePidUseCase: DeletePidUseCase
+    private val deletePidUseCase: DeletePidUseCase,
+    private val insertLogEntryUseCase : InsertLogEntryUseCase,
+    private val getLogEntryUseCase : GetLogEntriesUseCase,
+    private val deleteLogEntriesUseCase: DeleteLogEntriesUseCase
 ):ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -36,7 +37,10 @@ class MainViewModelFactory(
             serviceMessenger,
             savePidUseCase,
             getSavedPidsUseCase,
-            deletePidUseCase
+            deletePidUseCase,
+            insertLogEntryUseCase,
+            getLogEntryUseCase,
+            deleteLogEntriesUseCase
         ) as T
     }
 

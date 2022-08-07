@@ -3,9 +3,7 @@ package com.fimbleenterprises.torquepidcaster.di
 import android.app.Application
 import android.util.Log
 import com.fimbleenterprises.torquepidcaster.domain.service.ServiceMessenger
-import com.fimbleenterprises.torquepidcaster.domain.usecases.DeletePidUseCase
-import com.fimbleenterprises.torquepidcaster.domain.usecases.GetSavedPidsUseCase
-import com.fimbleenterprises.torquepidcaster.domain.usecases.SavePidUseCase
+import com.fimbleenterprises.torquepidcaster.domain.usecases.*
 import com.fimbleenterprises.torquepidcaster.presentation.viewmodel.MainViewModelFactory
 import dagger.Module
 import dagger.Provides
@@ -39,14 +37,20 @@ class FactoryModule {
         serviceManager: ServiceMessenger,
         savePidUseCase: SavePidUseCase,
         getSavedPidsUseCase: GetSavedPidsUseCase,
-        deletePidUseCase: DeletePidUseCase
+        deletePidUseCase: DeletePidUseCase,
+        insertLogEntryUseCase: InsertLogEntryUseCase,
+        getLogEntriesUseCase: GetLogEntriesUseCase,
+        deleteLogEntriesUseCase: DeleteLogEntriesUseCase
     ): MainViewModelFactory {
         return MainViewModelFactory(
             application,
             serviceManager,
             savePidUseCase,
             getSavedPidsUseCase,
-            deletePidUseCase
+            deletePidUseCase,
+            insertLogEntryUseCase,
+            getLogEntriesUseCase,
+            deleteLogEntriesUseCase
         )
     }
 

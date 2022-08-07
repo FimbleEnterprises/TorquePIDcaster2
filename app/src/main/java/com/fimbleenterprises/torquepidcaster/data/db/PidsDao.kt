@@ -20,10 +20,13 @@ interface PidsDao {
     @Delete
     suspend fun deletePid(pid: FullPid): Int
 
-    @Query("SELECT * FROM savedpids WHERE fullName = :strName")
+    @Query("SELECT * FROM savedpids WHERE id = :strName")
     fun getSavedPid(strName: String): Flow<FullPid>
 
     @Query("SELECT * FROM savedpids")
     fun getSavedPids(): Flow<List<FullPid>>
+
+    @Query("DELETE FROM savedpids")
+    fun deleteAll(): Int
 
 }

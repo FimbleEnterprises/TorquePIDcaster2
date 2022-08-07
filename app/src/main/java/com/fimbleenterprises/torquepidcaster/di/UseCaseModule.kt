@@ -2,9 +2,7 @@ package com.fimbleenterprises.torquepidcaster.di
 
 import android.util.Log
 import com.fimbleenterprises.torquepidcaster.domain.repository.MainRepository
-import com.fimbleenterprises.torquepidcaster.domain.usecases.DeletePidUseCase
-import com.fimbleenterprises.torquepidcaster.domain.usecases.GetSavedPidsUseCase
-import com.fimbleenterprises.torquepidcaster.domain.usecases.SavePidUseCase
+import com.fimbleenterprises.torquepidcaster.domain.usecases.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,6 +35,30 @@ class UseCaseModule {
         mainRepository: MainRepository
     ): GetSavedPidsUseCase {
         return GetSavedPidsUseCase(mainRepository)
+    }
+
+    @Singleton
+    @Provides
+    fun provideInsertLogEntryUseCase(
+        mainRepository: MainRepository
+    ): InsertLogEntryUseCase {
+        return InsertLogEntryUseCase(mainRepository)
+    }
+
+    @Singleton
+    @Provides
+    fun provideGetLogEntryUseCase(
+        mainRepository: MainRepository
+    ): GetLogEntriesUseCase {
+        return GetLogEntriesUseCase(mainRepository)
+    }
+
+    @Singleton
+    @Provides
+    fun provideDeleteLogEntryUseCase(
+        mainRepository: MainRepository
+    ): DeleteLogEntriesUseCase {
+        return DeleteLogEntriesUseCase(mainRepository)
     }
 
     init { Log.i(TAG, "Initialized:UseCaseModule") }

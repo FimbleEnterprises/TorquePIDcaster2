@@ -3,6 +3,7 @@ package com.fimbleenterprises.torquepidcaster.data.model
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
+import com.fimbleenterprises.torquepidcaster.MyApp
 import com.fimbleenterprises.torquepidcaster.util.Helpers
 import org.prowl.torque.remote.ITorqueService
 
@@ -15,15 +16,16 @@ import org.prowl.torque.remote.ITorqueService
 /**
  * Used as a container to track a single pid as returned by Torque.  This class holds the
  * information about the pid as well as the value and logic to determine whether or not
- * that value has exceeded an arbitrary value and should be broadcast to 3rd party apps.
+ * that value has exceeded an arbitrary threshold and should be broadcast to 3rd party apps.
  */
 data class FullPid (
 
     @PrimaryKey(autoGenerate = false)
     /**
-     * The long name as returned by Torque.  Also the primary key in the Room db.
+     * The long name as returned by [ITorqueService] and should always be unique.  Also the
+     * primary key in the Room db (saved_pids table).
      */
-    var fullName: String = "ERROR_CREATING_PID",
+    var id: String = "ERROR_CREATING_PID",
     /**
      * The short name of the pid as reported by Torque
      */
@@ -108,7 +110,7 @@ data class FullPid (
      * This is the action property for the intent that will be broadcast and be evaluated by
      * 3rd party apps.
      */
-    var broadcastAction: String? = null,
+    private var broadcastAction: String = "NULL",
     /**
      * Not saved to database.
      */
@@ -116,7 +118,8 @@ data class FullPid (
     /**
      * Not saved to database.
      */
-    @Ignore var isMonitored: Boolean = false
+    var isMonitored: Boolean = false,
+    @Ignore var triggeredAt: String? = null
 ) {
     /**
      * If you query ITorqueService to get info or values it will return those things
@@ -134,7 +137,7 @@ data class FullPid (
         val list = createMany(commaDelimitedPidInfo, commaDelimitedPidValues)
         if (list.size > 0) {
             val fullPid = list[0]
-            this.fullName = fullPid.fullName
+            this.id = fullPid.id
             this.shortName = fullPid.shortName
             this.unit = fullPid.unit
             this.max = fullPid.max
@@ -152,7 +155,7 @@ data class FullPid (
      */
     constructor(info: String, value: Double) : this() {
         val fullPid = create(info, value)
-        this.fullName = fullPid.fullName
+        this.id = fullPid.id
         this.shortName = fullPid.shortName
         this.unit = fullPid.unit
         this.max = fullPid.max
@@ -206,6 +209,14 @@ data class FullPid (
         }
     }*/
 
+    fun setBroadcastAction(action: String) {
+        this.broadcastAction = action?.uppercase()
+    }
+
+    fun getBroadcastAction(): String {
+        return this.broadcastAction.uppercase()
+    }
+
     /**
      * Updates this pid's value and timestamps it.
      */
@@ -215,10 +226,15 @@ data class FullPid (
     }
 
     /**
-     * Returns this pid's private value property.
+     * Returns this pid's private value property.  If user preferences suggest imperial then the
+     * value will attempt to be converted from metric.
      */
     fun getValue(): Double {
-        return this.value
+        return if (MyApp.AppPreferences.useImperial && this.unit != null) {
+            tryConvertToImperial(this.value, this.unit!!)
+        } else {
+            this.value
+        }
     }
 
     /**
@@ -249,7 +265,7 @@ data class FullPid (
             val fullPid = FullPid()
             try {
                 val pidInfo = info.split(",").toTypedArray()
-                fullPid.fullName = pidInfo[0]
+                fullPid.id = pidInfo[0]
                 fullPid.shortName = pidInfo[1]
                 fullPid.unit = pidInfo[2]
                 fullPid.max = pidInfo[3].toDouble()
@@ -266,6 +282,8 @@ data class FullPid (
          * ITorqueService calls.
          */
         fun createMany(infos: Array<String>, values: DoubleArray) : ArrayList<FullPid> {
+            // TODO: Had an index out of bounds exception here while running on the emulator in the
+            //  background for awhile while working on something else.
             val fullPids = ArrayList<FullPid>()
             for (i in infos.indices) {
                 fullPids.add(FullPid(infos[i], values[i]))

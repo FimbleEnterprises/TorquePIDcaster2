@@ -1,7 +1,10 @@
 package com.fimbleenterprises.torquepidcaster.util;
 
+import static android.app.Notification.EXTRA_NOTIFICATION_ID;
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
 import static android.content.Context.MODE_PRIVATE;
 import static android.content.Context.NOTIFICATION_SERVICE;
+import static android.content.Context.POWER_SERVICE;
 
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
@@ -18,7 +21,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -27,14 +29,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.location.Location;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.preference.PreferenceManager;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.telephony.SmsManager;
 import android.text.Layout;
@@ -59,8 +60,8 @@ import android.widget.ScrollView;
 import android.widget.Toast;
 
 import com.fimbleenterprises.torquepidcaster.BuildConfig;
-import com.fimbleenterprises.torquepidcaster.PluginActivity;
 import com.fimbleenterprises.torquepidcaster.R;
+import com.fimbleenterprises.torquepidcaster.receiver.MyTorqueBroadcastReceiver;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.RequiresApi;
@@ -174,7 +175,7 @@ public class Helpers {
                             int mPendingIntentId = 223344;
                             PendingIntent mPendingIntent = PendingIntent
                                     .getActivity(c, mPendingIntentId, mStartActivity,
-                                            PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                                            PendingIntent.FLAG_CANCEL_CURRENT | FLAG_IMMUTABLE);
                             AlarmManager mgr = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
                             mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
                             //kill the application
@@ -191,6 +192,33 @@ public class Helpers {
             } catch (Exception ex) {
                 Log.e(TAG, "Was not able to restart application");
             }
+        }
+
+        /**
+         * Checks if the app is currently ignoring battery optimizations.  Important for many
+         * things such as starting a foreground service from a background thread (broadcast
+         * receiver etc.).  NOTE: We have no restrictions if this method returns TRUE.
+         * @param context A context sufficient to call getSystemService(POWER_SERVICE)
+         * @return True if the app is saying fuck all to Android's protections.
+         */
+        public static Boolean isIgnoringBatteryOptimizations(Context context)  {
+            Intent intent = new Intent();
+            String packageName = context.getPackageName();
+            PowerManager pm = (PowerManager) context.getSystemService(POWER_SERVICE);
+            return pm.isIgnoringBatteryOptimizations(packageName);
+        }
+
+        /**
+         * Sends the user to device settings regarding this app and battery optimization.
+         * PREEETY sure this needs the following permission in the manifest:
+         * REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+         * @param context A context sufficient to launch an activity.
+         */
+        public static void sendToAppSettings(Activity context) {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            Uri uri = Uri.fromParts("package", context.getPackageName(), null);
+            intent.setData(uri);
+            context.startActivity(intent);
         }
 
         /**
@@ -383,45 +411,81 @@ public class Helpers {
         }
     }
 
-    public static class Notifications {
+    public static class AppNotificationManager {
 
         public String NOTIFICATION_CHANNEL = "PIDCASTER_NOTIF_CHANNEL";
         Context context;
         public NotificationManager manager;
         Notification notification;
-        public final int START_ID = 1;
+        public final int START_ID = 55;
+        public static final int PENDINGINTENT_REQ_CODE = 3;
+        public static final int CONTENTINTENT_REQ_CODE = 2;
+        public static final int STARTSERVICE_INTENT_ID = 53;
+        public static final int STOPSERVICE_INTENT_ID = 52;
 
-        public Notifications(Context context) {
+        public AppNotificationManager(Context context) {
             this.context = context;
             this.manager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
         }
 
-
         @RequiresApi(api = Build.VERSION_CODES.O)
-        public Notification create(String title, String text, boolean showProgress, Class pClass) {
+        public Notification create(String title, String text, boolean showProgress, boolean showStopButton, Class pClass) {
             ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE)).createNotificationChannel(
                     new NotificationChannel(NOTIFICATION_CHANNEL,NOTIFICATION_SERVICE,NotificationManager.IMPORTANCE_HIGH));
 
             Intent newIntent = new Intent(context, pClass);
+            newIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_NEW_TASK);
+            newIntent.setAction("START_PIDCASTER");
 
             // The PendingIntent to launch our activity if the user selects this notification
             PendingIntent contentIntent = PendingIntent.getActivity(context,
-                    0, newIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                    CONTENTINTENT_REQ_CODE, newIntent,
+                    FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+
+            Intent stopServiceIntent = new Intent(context, MyTorqueBroadcastReceiver.class);
+            stopServiceIntent.setAction("STOP_PIDCASTER");
+            stopServiceIntent.putExtra(EXTRA_NOTIFICATION_ID, STARTSERVICE_INTENT_ID);
+
+            Intent startServiceIntent = new Intent(context, MyTorqueBroadcastReceiver.class);
+            startServiceIntent.setAction("START_PIDCASTER");
+            startServiceIntent.putExtra(EXTRA_NOTIFICATION_ID, STOPSERVICE_INTENT_ID);
+
+            PendingIntent stopServicePendingIntent =
+                    PendingIntent.getBroadcast(context, PENDINGINTENT_REQ_CODE, stopServiceIntent, FLAG_IMMUTABLE);
+
+            PendingIntent startServicePendingIntent =
+                    PendingIntent.getBroadcast(context, PENDINGINTENT_REQ_CODE, startServiceIntent, FLAG_IMMUTABLE);
 
             NotificationCompat.BigTextStyle style = new NotificationCompat.BigTextStyle()
                     .bigText(text);
 
-            notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
-                    .setContentTitle(title)
-                    .setContentText(text)
-                    .setOnlyAlertOnce(true) // so when data is updated don't make sound and alert in android 8.0+
-                    .setOngoing(false)
-                    .setStyle(style)
-                    .setProgress(0,0,showProgress)
-                    .setSmallIcon(R.drawable.iconplay)
-                    .setContentIntent(contentIntent)
-                    .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher))
-                    .build();
+            if (showStopButton) {
+                notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
+                        .setContentTitle(title)
+                        .setContentText(text)
+                        .setOnlyAlertOnce(true) // so when data is updated don't make sound and alert in android 8.0+
+                        .setOngoing(false)
+                        .setStyle(style)
+                        .setProgress(0,0,showProgress)
+                        .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+                        .setContentIntent(contentIntent)
+                        .addAction(android.R.drawable.ic_media_pause, "STOP",
+                                stopServicePendingIntent)
+                        .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.app_icon))
+                        .build();
+            } else {
+                notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
+                        .setContentTitle(title)
+                        .setContentText(text)
+                        .setOnlyAlertOnce(true) // so when data is updated don't make sound and alert in android 8.0+
+                        .setOngoing(false)
+                        .setStyle(style)
+                        .setProgress(0,0,showProgress)
+                        .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+                        .setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.app_icon))
+                        .build();
+            }
+
             return notification;
         }
 
@@ -439,8 +503,8 @@ public class Helpers {
         }
 
         @RequiresApi(api = Build.VERSION_CODES.O)
-        public void update(String title, String msg, Boolean showProgress, Class pclass) {
-            Notification notif = create(title, msg, showProgress, pclass);
+        public void update(String title, String msg, Boolean showProgress, Boolean showStopButton, Class pclass) {
+            Notification notif = create(title, msg, showProgress, showStopButton, pclass);
             manager.notify(START_ID, notif);
         }
 
@@ -1170,9 +1234,9 @@ public class Helpers {
 
             // set pendingIntent for sent & delivered
             PendingIntent sentIntent = PendingIntent.getBroadcast(activity, 100, new
-                    Intent(SENT_ACTION), PendingIntent.FLAG_IMMUTABLE);
+                    Intent(SENT_ACTION), FLAG_IMMUTABLE);
             PendingIntent deliveryIntent = PendingIntent.getBroadcast(activity, 200, new
-                    Intent(DELIVERY_ACTION), PendingIntent.FLAG_IMMUTABLE);
+                    Intent(DELIVERY_ACTION), FLAG_IMMUTABLE);
 
             activity.registerReceiver(new BroadcastReceiver() {
                 @Override

@@ -8,19 +8,16 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="colorPrimary">#000000</color>
-    <color name="colorPrimaryDark">#FFFFFF</color>
-    <color name="colorPrimaryAlt">#0026FF</color>
+    <color name="colorPrimaryDark">#040101</color>
+    <color name="colorPrimaryAlt">#FFFFFF</color>
     <color name="colorPrimaryDarkAlt">#0026FF</color>
     <color name="colorMaroon">#FF0000</color>
     <color name="colorBlue">#0000FF</color>
     <color name="colorGreen">#267F00</color>
 
-    <!--    <color name="colorPrimary">#6686A0</color>
-    <color name="colorPrimaryDark">#364959</color>-->
-
     <color name="colorAccent">#000000</color>
-    <color name="enabled_color">#F7FE2E</color>
-    <color name="disabled_color">#000000</color>
+    <color name="enabled_color">#070707</color>
+    <color name="disabled_color">#878484</color>
     <color name="black_overlay">#66000000</color>
     <color name="light_blue_600">#FF039BE5</color>
     <color name="light_blue_900">#FF01579B</color>

@@ -1,14 +1,13 @@
 package com.fimbleenterprises.torquepidcaster
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Debug
-import android.text.Editable
-import android.text.TextWatcher
+import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
-import android.widget.CompoundButton
-import android.widget.SeekBar
-import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
@@ -16,13 +15,15 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.fimbleenterprises.torquepidcaster.databinding.ActivityPluginBinding
-import com.fimbleenterprises.torquepidcaster.domain.service.PidMonitoringService
 import com.fimbleenterprises.torquepidcaster.presentation.viewmodel.MainViewModel
 import com.fimbleenterprises.torquepidcaster.presentation.viewmodel.MainViewModelFactory
+import com.fimbleenterprises.torquepidcaster.util.Helpers
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+
 
 @AndroidEntryPoint
 class PluginActivity : AppCompatActivity() {
@@ -47,6 +48,7 @@ class PluginActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val navView: BottomNavigationView = binding.navView
+        navView.itemIconTintList = null
 
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
         // Passing each menu ID as a set of Ids because each
@@ -59,34 +61,40 @@ class PluginActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
+
         initMonitorService()
+
+        if (!viewmodel.isIgnoringBattOptimizations()) {
+            showSnackBar()
+        }
+    }
+
+    private fun showSnackBar() {
+        val snack = Snackbar.make(
+            binding.root,
+            getString(R.string.batt_opt_snack_message),
+            Snackbar.LENGTH_INDEFINITE
+        )
+        snack.setAction(
+            getString(R.string.fix)
+        ) {
+            // build alert dialog
+            val dialogBuilder = AlertDialog.Builder(this)
+            dialogBuilder.setMessage(getString(R.string.batt_opt_message))
+                .setCancelable(true)
+                .setPositiveButton(getString(R.string.take_me_there)) { _, _ ->
+                    Helpers.Application.sendToAppSettings(this)
+                }
+            val alert = dialogBuilder.create()
+            alert.show()
+        }
+        snack.show()
     }
 
     private fun initMonitorService() {
         viewmodel.serviceRunning.observeForever {
             binding.switchService.isChecked = it
         }
-
-        binding.editTextNumberDecimal.setText(MyApp.AppPreferences.scanInterval.toString())
-
-        binding.editTextNumberDecimal.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {}
-
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (s?.length!! > 0) {
-                    try {
-                        val interval = s.toString().toFloat()
-                        MyApp.AppPreferences.scanInterval = interval.toFloat()
-                    } catch (exception:Exception) {
-                        Log.e(TAG, "onTextChanged: ${exception.localizedMessage}"
-                            , exception)
-
-                    }
-                }
-            }
-        })
 
         binding.switchService.setOnCheckedChangeListener { _, isChecked ->
             viewmodel.apply {
@@ -104,7 +112,19 @@ class PluginActivity : AppCompatActivity() {
             }
         }
     }
-    init { Log.i(TAG, "Initialized:PluginActivity") }
+
+    private fun openPowerSettings(context: Context) {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(context.packageName)) {
+            val intent = Intent()
+            intent.action = Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
+            context.startActivity(intent)
+        }
+    }
+
+    init {
+        Log.i(TAG, "Initialized:PluginActivity")
+    }
     companion object { private const val TAG = "FIMTOWN|PluginActivity" }
 }
 

@@ -7,26 +7,36 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.res.Configuration
 import android.os.*
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleService
 import com.fimbleenterprises.torquepidcaster.MyApp
 import com.fimbleenterprises.torquepidcaster.PluginActivity
 import com.fimbleenterprises.torquepidcaster.R
 import com.fimbleenterprises.torquepidcaster.data.model.FullPid
+import com.fimbleenterprises.torquepidcaster.data.model.TriggeredPid
+import com.fimbleenterprises.torquepidcaster.domain.usecases.DeleteLogEntriesUseCase
+import com.fimbleenterprises.torquepidcaster.domain.usecases.GetLogEntriesUseCase
 import com.fimbleenterprises.torquepidcaster.domain.usecases.GetSavedPidsUseCase
+import com.fimbleenterprises.torquepidcaster.domain.usecases.InsertLogEntryUseCase
 import com.fimbleenterprises.torquepidcaster.util.Helpers
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import org.joda.time.DateTime
 import org.prowl.torque.remote.ITorqueService
-import java.lang.Runnable
 import javax.inject.Inject
 
 
 @AndroidEntryPoint
-open class PidMonitoringService : LifecycleService(), ServiceConnection {
+open class PidMonitoringService : LifecycleService(), ServiceConnection, LifecycleOwner {
 
     /**
      * This class acts as a messenger to communicate data between this service and a viewmodel
@@ -34,15 +44,40 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
      */
     @Inject
     lateinit var serviceMessenger: ServiceMessenger
-    
+
     @Inject
     lateinit var getSavedPidsUseCase: GetSavedPidsUseCase
+
+    @Inject
+    lateinit var deleteLogEntriesUseCase: DeleteLogEntriesUseCase
+
+    @Inject
+    lateinit var insertLogEntryUseCase: InsertLogEntryUseCase
+
+    @Inject
+    lateinit var getLogEntriesUseCase: GetLogEntriesUseCase
 
     /**
      * Helper class for quickly managing a single notification.
      */
     @Inject
-    lateinit var notifs: Helpers.Notifications
+    lateinit var notifs: Helpers.AppNotificationManager
+
+    /**
+     * Will get populated oncreate and be updated by an observer observing saved pids as a flow.
+     */
+    private lateinit var savedPIDs: List<FullPid>
+
+    /**
+     * Used to prevent broadcast spamming.
+     */
+    private var lastBroadcast: Long = System.currentTimeMillis()
+
+    /**
+     * Updating the PID values multiple times per second makes for a janky recyclerview despite
+     * using DiffUtil so this value is used to throttle the updates.
+     */
+    private var lastUpdatedPids: Long = System.currentTimeMillis()
 
     /**
      * A third party service provided by the Torque application and connected to via an aidl interface.
@@ -62,6 +97,8 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
      */
     private var receivedPIDs: ArrayList<FullPid> = ArrayList()
 
+    private var logEntries: ArrayList<TriggeredPid> = ArrayList()
+
     private var isDebugMode: Boolean = false
     private var binder: IBinder? = null
     private var myHandler: Handler = Handler(Looper.myLooper()!!)
@@ -76,10 +113,15 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Show a the mandatory notification for a foreground service.
-        val notification = notifs.create(getString(R.string.app_name), getString
-            (R.string.connecting_to_torque), true, PluginActivity::class.java)
-        isDebugMode = intent?.getBooleanExtra(DEBUG_MODE, false)!!
+        val notification = notifs.create(
+            getString(R.string.app_name),
+            getString(R.string.connecting_to_torque),
+            false,
+            true,
+            PluginActivity::class.java
+        )
         startForeground(notifs.START_ID, notification)
+        serviceMessenger.serviceStarting()
         serviceMessenger.serviceStarted()
         bindToTorqueService()
         return super.onStartCommand(intent, flags, startId)
@@ -90,16 +132,28 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
         wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
             newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, PIDCASTER_WAKELOCK)
         }
+
+        // Make a call at creation to establish the list of saved pids and then have it updated only
+        // as changes are made.  As opposed to calling this on every looper loop.
+        CoroutineScope(Main).launch {
+            getSavedPidsUseCase.execute().collect { // Gets called whenever record is added/removed
+                savedPIDs = it
+                Log.i(TAG, "-=PidMonitoringService:onCreate Retrieved initial saved PIDs =-")
+            }
+        }
+
+        // Grab a handle on our log
+        CoroutineScope(Main).launch {
+            getLogEntriesUseCase.executeMany().collect {
+                logEntries = ArrayList(it)
+            }
+        }
+
         if (wakeLock.isHeld) {
             serviceMessenger.wakelockAcquired()
         } else {
             serviceMessenger.wakelockReleased()
         }
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        Log.i(TAG, "-=PidMonitoringService:onConfigurationChanged =-")
     }
 
     override fun onDestroy() {
@@ -130,19 +184,20 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
             )
             try {
                 // Bind to the torque service
-                val successfulBind = bindService(intent, this, 0)
+                startService(intent)
+                val successfulBind = bindService(intent, this, BIND_AUTO_CREATE)
                 if (successfulBind) {
                     Log.i(
                         TAG, "-=PidMonitoringService:bindToTorqueService was successful" +
-                            "- now waiting for onServiceConnected to be called... =-")
+                                "- now waiting for onServiceConnected to be called... =-")
                     /**
                      * Not really anything to do here. Once you have bound to the service, you can
-                     * start calling methods on torqueService.someMethod()  - look at the aidl file
+                     * start calling methods on torqueService.someMethod() - look at the aidl file
                      * for more info on the calls
                      */
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "bindToTorqueService: ${e.localizedMessage}")
+                Log.w(TAG, "bindToTorqueService: ${e.localizedMessage}")
                 e.printStackTrace()
             }
         } catch (e: Exception) {
@@ -151,12 +206,19 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
     }
 
     private fun stopEverything() {
+        Log.w(TAG, "-=========================-")
+        Log.w(TAG, "-=!!STOPPING EVERYTHING!!=-")
+        Log.w(TAG, "-=========================-")
         if (wakeLock.isHeld) {
             wakeLock.release()
             serviceMessenger.wakelockReleased()
         }
+        if (torqueService != null) {
+            unbindService(this)
+        }
         myHandler.removeCallbacksAndMessages(null)
-        stopForeground(true)
+        stopForeground(false)
+        notifs.cancel()
         stopSelf()
     }
 
@@ -167,10 +229,16 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onServiceConnected(name: ComponentName, service: IBinder?) {
+
         // Update subscribers that the Torque service has been bound and is ready for use.
         serviceMessenger.torqueConnected()
         binder = service
-        notifs.update(getString(R.string.default_notif_title), getString(R.string.connected_to_torque), false, PluginActivity::class.java)
+        notifs.update(
+            getString(R.string.default_notif_title),
+            getString(R.string.connected_to_torque),
+            false,
+            true,
+            PluginActivity::class.java)
         torqueService = ITorqueService.Stub.asInterface(service)
         torqueService?.setDebugTestMode(isDebugMode)
         assert(torqueService != null)
@@ -182,14 +250,14 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onServiceDisconnected(name: ComponentName?) {
-
+        unbindService(this)
         torqueService = null
         serviceMessenger.torqueDisconnected()
+        serviceMessenger.ecuDisconnected()
         stopEverything()
 
-        notifs.update(getString(R.string.default_notif_title),
-            getString(R.string.failed_to_connect_torque_notif_msg), false, PluginActivity::class.java)
-        Log.e(TAG, " -= onServiceDisconnected|${name?.shortClassName} =-")
+        notifs.cancel()
+        Log.w(TAG, " -= onServiceDisconnected|${name?.shortClassName} =-")
     }
 
     /**
@@ -197,6 +265,17 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
      * calling [getAndProcessTorquePids].
      */
     private fun startMonitoring() {
+        notifs.update(
+            getString(
+                R.string.default_notif_title
+            ),
+            getString(
+                R.string.pidcaster_is_running
+            ),
+            false,
+            true,
+            PluginActivity::class.java
+        )
         if (runner != null) {
             try {
                 myHandler.removeCallbacks(runner!!)
@@ -208,12 +287,26 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
         runner = Runnable {
             if (torqueService == null) {
                 myHandler.removeCallbacks(runner!!)
+                stopEverything()
             } else {
+                doDefaultBroadcast()
                 getAndProcessTorquePids()
-                myHandler.postDelayed(runner!!, (MyApp.AppPreferences.scanInterval * 1000).toLong())
+                reportEcuConnectionState()
+                myHandler.postDelayed(runner!!, (MyApp.AppPreferences.scanInterval).toLong())
             }
         }
-        myHandler.postDelayed(runner!!, (MyApp.AppPreferences.scanInterval * 1000).toLong())
+        myHandler.postDelayed(runner!!, (MyApp.AppPreferences.scanInterval).toLong())
+    }
+
+    /**
+     * Publish that we are/not connected to the ECU
+     */
+    private fun reportEcuConnectionState() {
+        if (torqueService!!.isConnectedToECU) {
+            serviceMessenger.ecuConnected()
+        } else {
+            serviceMessenger.ecuDisconnected()
+        }
     }
 
     /**
@@ -222,11 +315,15 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
      */
     private fun getAndProcessTorquePids() {
 
+        // Log.i("THREADING", "${Thread.currentThread().name}|MASTER|START")
+
+
         // If the activity is killed (manually or otherwise) and restarted, the torqueConnected
         // livedata will not get updated and the fragment will show false despite it actually
         // being connected.  Thus, we update it via the messenger every time this function is called.
         if (torqueService == null) {
             serviceMessenger.torqueDisconnected()
+            serviceMessenger.ecuDisconnected()
             myHandler.removeCallbacksAndMessages(null)
             return
         }
@@ -244,60 +341,154 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
 
         // Using the array of basic info pids, query ITorqueService for more info about the PIDs
         // as well as the values for the PIDs
-        val arrayInfo: Array<String> = torqueService!!.getPIDInformation(infoOnlyPids)
-        val arrayValue: DoubleArray = torqueService!!.getPIDValuesAsDouble(infoOnlyPids)
-        receivedPIDs = FullPid.createMany(arrayInfo, arrayValue)
+        try {
+            val arrayInfo: Array<String> = torqueService!!.getPIDInformation(infoOnlyPids)
+            val arrayValue: DoubleArray = torqueService!!.getPIDValuesAsDouble(infoOnlyPids)
+            receivedPIDs = FullPid.createMany(arrayInfo, arrayValue)
+            receivedPIDs.sortBy {
+                it.id
+            }
+        } catch (e: DeadObjectException) { // Found this in testing when killing the Torque app.
+            Log.w(TAG, "-= =============================================================== =-")
+            Log.w(TAG, " -= getAndProcessTorquePids failed with DeadObjectException. Pretty " +
+                    "sure the Torque service died after we started this method.  Will try to " +
+                    "gracefully shut everything down with stopEverything() =-")
+            Log.w(TAG, "-= =============================================================== =-")
+            stopEverything()
+        }
 
         // Evaluate received pids vs. saved pids and look for values that should be broadcast.
-        CoroutineScope(Dispatchers.Main).launch {
-            // Get the saved PIDs from the database
-            getSavedPidsUseCase.execute().collect { savedPIDs ->
+        CoroutineScope(Main).launch {
+            // Log.i("THREADING", "${Thread.currentThread().name}|MAINPARENT|START")
+            // Run on background thread.
+            withContext(IO) {
+                //Log.i("THREADING", "${Thread.currentThread().name}|IO|1")
                 // We start by looping through all PIDs received from ITorqueService
                 receivedPIDs.forEach { receivedPID ->
                     // Loop through the smaller array of saved pids we got from Room
                     savedPIDs.forEach { savedPID ->
                         // If the names match then user is following it.
-                        if (receivedPID.fullName == savedPID.fullName) {
+                        if (receivedPID.id == savedPID.id) {
                             // Assign properties from the saved pid to the received pid before publish
                             receivedPID.isMonitored = true
                             receivedPID.threshold = savedPID.threshold
                             receivedPID.operator = savedPID.operator
+                            receivedPID.setBroadcastAction(savedPID.getBroadcastAction())
                             // Check if its value qualifies it to be broadcast.
                             if (receivedPID.shouldBroadcast()) {
-                                // Since saved pids do not store a value we assign it using the
-                                // most recent value and then do the actual broadcast.
-                                savedPID.setValue(receivedPID.getValue())
-                                doBroadcast(savedPID)
-                                // Publish the triggered pid.
-                                serviceMessenger.publishTriggeredPid(savedPID)
-                            } // shouldBroadcast
+                                if ((System.currentTimeMillis() - lastBroadcast)
+                                    > MINIMUM_WAIT_TIME_TO_BROADCAST
+                                ) {
+                                    // Since saved pids do not store a value we assign it using the
+                                    // most recent value and then do the actual broadcast.
+                                    savedPID.setValue(receivedPID.getValue())
+
+                                    // Send broadcast to 3rd party apps.
+                                    doBroadcast(savedPID)
+
+                                    // Broadcast the triggered pid with the receiver which must be done from the main thread.
+                                    CoroutineScope(Main).launch {
+                                        // Create a TriggeredPid object to send with the messenger.
+                                        val triggeredPid = TriggeredPid()
+                                        triggeredPid.pidFullname = savedPID.id
+                                        triggeredPid.triggeredOnMillis = System.currentTimeMillis()
+                                        triggeredPid.operator = savedPID.operator
+                                        triggeredPid.broadcastAction = savedPID.getBroadcastAction()
+                                        triggeredPid.threshold = savedPID.threshold
+                                        triggeredPid.value = savedPID.getValue()
+                                        // serviceMessenger.publishTriggeredPid(triggeredPid)
+                                        lastBroadcast = System.currentTimeMillis()
+
+                                        // Save this alert to the database log
+                                        while(logEntries.size > 50) {
+                                            deleteLogEntriesUseCase.execute(logEntries[0])
+                                        }
+                                        insertLogEntryUseCase.execute(triggeredPid)
+
+                                    } // main thread
+                                } // can broadcast (spam check)
+                            } // pid alarm exceeded, shouldBroadcast
                         } // fullname == fullname
                     } // for/each saved pid
                 } // for/each received pid
+                //Log.i("THREADING", "${Thread.currentThread().name}|IO|2")
+            } // bg thread
 
-                // Publish the arraylist via the ServiceMessenger to all subscribers.  This is
-                // NOT a broadcast event such that an alarm has been triggered (that happens above).
-                // This is purely for showing PIDs in a recyclerview or other informational purposes.
-                serviceMessenger.publishFullPids(receivedPIDs)
+            withContext(Main) {
+                //Log.i("THREADING", "${Thread.currentThread().name}|MAIN|1")
+                    serviceMessenger.publishFullPids(receivedPIDs)
+                    lastUpdatedPids = System.currentTimeMillis()
+                    notifs.update(
+                        getString(
+                            R.string.default_notif_title
+                        ),
+                        getString(R.string.pidcaster_is_running_with_count, savedPIDs.size),
+                        false,
+                        true,
+                        PluginActivity::class.java
+                    )
 
-                // Keep checking the wakelock and signal that too for good measure.
-                if (wakeLock.isHeld) {
-                    serviceMessenger.wakelockAcquired()
-                } else {
-                    serviceMessenger.wakelockReleased()
-                }
-            }
+                    // Keep checking the wakelock and signal that too for good measure.
+                    if (wakeLock.isHeld) {
+                        serviceMessenger.wakelockAcquired()
+                    } else {
+                        serviceMessenger.wakelockReleased()
+                    }
+                //Log.i("THREADING", "${Thread.currentThread().name}|MAIN|2")
+            }  // IO thread
+            //Log.i("THREADING", "${Thread.currentThread().name}|MAINPARENT|END")
+        } // CoroutineScope (IO)
 
-        }
+       // Log.i("THREADING", "${Thread.currentThread().name}|MASTER|END")
     }
 
     /**
      * Constructs and sends a system-wide broadcast that can be consumed by 3rd party apps.
      */
-    private fun doBroadcast(fullPid: FullPid) {
-        val intent = Intent(fullPid.broadcastAction)
-        intent.putExtra(fullPid.broadcastAction, fullPid.getValue())
+    private fun doBroadcast(pid: FullPid) {
+
+        val intent = Intent(getString(R.string.broadcast_preamble, pid.getBroadcastAction()))
+        intent.putExtra(getString(R.string.broadcast_preamble, pid.getBroadcastAction()), pid.getValue())
         sendBroadcast(intent)
+        notifs.update(
+            getString(R.string.default_notif_title),
+            "${getString(R.string.sent_broadcast)}\n${
+                getString(
+                    R.string.trigger_log2,
+                    pid.id,
+                    pid.getValue().toString(),
+                    pid.operator?.name,
+                    pid.threshold.toString()
+                )}\n${Helpers.DatesAndTimes.getPrettyDateAndTime(DateTime.now(),false, true )}",
+            false,
+            true,
+            PluginActivity::class.java
+        )
+    }
+
+    fun buildNotificationMessage(pid: FullPid) {
+
+    }
+
+    // Sends out the broadcast action declaring the connected to ECU state.
+    private fun doDefaultBroadcast() {
+        try {
+            val action: String = if (torqueService?.isConnectedToECU == true) {
+                getString(R.string.broadcast_preamble, MyApp.AppPreferences.connectedToEcu)
+            } else {
+                getString(R.string.broadcast_preamble, MyApp.AppPreferences.disconnectedFromEcu)
+            }
+            serviceMessenger.publishDefaultBroadcastAction(action)
+            val intent = Intent(action)
+            sendBroadcast(intent)
+        } catch (exception:DeadObjectException) {
+            Log.w(TAG, "-= =============================================================== =-")
+            Log.w(TAG, " -= getAndProcessTorquePids failed with DeadObjectException. Pretty " +
+                    "sure the Torque service died after we started this method.  Will try to " +
+                    "gracefully shut everything down with stopEverything() =-")
+            Log.w(TAG, "-= =============================================================== =-")
+            stopEverything()
+        }
     }
 
     init { Log.i(TAG, "Initialized:PidMonitoringService") }
@@ -305,6 +496,11 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection {
 
         private const val TAG = "FIMTOWN|PMService"
         private const val PIDCASTER_WAKELOCK = "PIDCASTER:WAKELOCK"
+
+        // When the interval is set low (like .1) or so it can create a backlog of broadcasts.  Even
+        // if the interval is changed while the backlog exists it will continue to fire.  This will
+        // hopefully prevent that.
+        private const val MINIMUM_WAIT_TIME_TO_BROADCAST = 1000
 
         /**
          * Used when binding

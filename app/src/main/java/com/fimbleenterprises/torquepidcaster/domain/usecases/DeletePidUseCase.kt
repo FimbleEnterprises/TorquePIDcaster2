@@ -7,6 +7,7 @@ import com.fimbleenterprises.torquepidcaster.domain.repository.MainRepository
 class DeletePidUseCase(private val mainRepository: MainRepository) {
 
     suspend fun execute(pid : FullPid) : Int = mainRepository.deletePid(pid)
+    suspend fun executeMany(): Int = mainRepository.deleteAll()
 
     init { Log.i(TAG, "Initialized:SavePidUseCase") }
     companion object { private const val TAG = "FIMTOWN|SavePidUseCase" }

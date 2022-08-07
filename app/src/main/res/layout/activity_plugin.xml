@@ -16,25 +16,11 @@
         android:layout_marginTop="5dp"
         android:layout_marginEnd="5dp"
         android:layout_marginBottom="5dp"
-        android:text="@string/monitor_switch" />
-
-    <TextView
-        android:id="@+id/txtSeekLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/switchService"
-        android:layout_alignParentLeft="true"
-        android:text="@string/scan_interval" />
-
-    <EditText
-        android:id="@+id/editTextNumberDecimal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/txtSeekLabel"
-        android:autofillHints="0.0"
-        android:ems="10"
-        android:inputType="numberDecimal"
-        android:text="0.0" />
+        android:background="@drawable/rounded_border_semi_tparent_white"
+        android:padding="10dp"
+        android:text="@string/monitor_switch"
+        android:textColor="#0303EA"
+        android:textSize="15sp" />
 
     <fragment
         android:id="@+id/nav_host_fragment_activity_main"
@@ -42,7 +28,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/nav_view"
-        android:layout_below="@id/editTextNumberDecimal"
+        android:layout_below="@id/switchService"
         app:defaultNavHost="true"
         app:navGraph="@navigation/mobile_navigation" />
 
@@ -54,6 +40,7 @@
         android:layout_marginStart="0dp"
         android:layout_marginEnd="0dp"
         android:background="?android:attr/windowBackground"
+        android:theme="@style/BottomNavigationTheme"
         app:menu="@menu/bottom_nav_menu" >
 
     </com.google.android.material.bottomnavigation.BottomNavigationView>

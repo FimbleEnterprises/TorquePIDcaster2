@@ -15,8 +15,10 @@ class ServiceNotificationsModule {
 
     @Singleton
     @Provides
-    fun providesServiceNotifications(@ApplicationContext context: Context): Helpers.Notifications {
-        return Helpers.Notifications(context)
+    fun providesServiceNotifications(@ApplicationContext context: Context): Helpers.AppNotificationManager {
+        return Helpers.AppNotificationManager(
+            context
+        )
     }
 
 }

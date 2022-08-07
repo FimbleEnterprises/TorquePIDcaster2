@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/rounded_border_semi_tparent_white"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+
+    <TextView
+        android:id="@+id/txtTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:gravity="center"
+        android:text="txtPidFullname"
+        android:textStyle="bold"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/txtMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtTitle"
+        android:layout_marginTop="15dp"
+        android:text="Operator:"
+        android:textStyle="bold" />
+
+    <Spinner
+        android:id="@+id/spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtMessage" />
+
+    <TextView
+        android:id="@+id/textView5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/spinner"
+        android:layout_marginTop="15dp"
+        android:text="Threshold:"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/etxtThreshold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView5"
+        android:autofillHints="A value within the minimum and maximum values for this pid."
+        android:ems="10"
+        android:inputType="numberDecimal" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/etxtThreshold"
+        android:layout_marginTop="15dp"
+        android:text="Broadcast action:"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/etxtAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView4"
+        android:ems="10"
+        android:inputType="textShortMessage|text|textCapCharacters"
+        android:text="ACTION" />
+
+    <TextView
+        android:id="@+id/txtExampleLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/etxtAction"
+        android:layout_marginTop="15dp"
+        android:text="What will be broadcast:"
+        android:textSize="12dp"
+        android:textStyle="bold" />
+
+    <ImageButton
+        android:id="@+id/imgCopy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/etxtAction"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="10dp"
+        android:background="?attr/actionModeCopyDrawable" />
+
+    <TextView
+        android:id="@+id/txtFullAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtExampleLabel"
+        android:text="@string/broadcast_preamble"
+        android:textSize="9sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtFullAction"
+        android:layout_marginTop="20dp"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btnRemoveAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@drawable/rounded_border_semi_tparent_white"
+            android:text="@string/remove_alarm_button" />
+
+        <Button
+            android:id="@+id/btnOkay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@drawable/rounded_border_semi_tparent_white"
+            android:text="@string/add_alarm_button" />
+    </LinearLayout>
+
+
+</RelativeLayout>

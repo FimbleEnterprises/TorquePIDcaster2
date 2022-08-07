@@ -4,56 +4,12 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_choosepids">Choose Pids</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="please_choose_team">Please choose a team</string>
-    <string name="next_five_games">Next 5 games:</string>
-    <string name="last_five_games">Last five games:</string>
-    <string name="about">About:</string>
-    <string name="menu_show_summaries">Show boxscores</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
-    <string name="menu_change_league">Change League…</string>
-    <string name="no_desc_found">No description found.</string>
-    <string name="search_teams_hint">"Search league: %1$s"</string>
-    <string name="league_query_hint">Search leagues by name</string>
-    <string name="my_teams_menu_item">My Teams</string>
-    <string name="find_teams_menu_item">Find Teams</string>
-    <string name="dialog_unfollow_team">Do you want to unfollow this team?</string>
-    <string name="unfollowed">Team unfollowed.</string>
-    <string name="choose_pids_title">Choose PIDS</string>
-    <string name="view_highlights">View Highlights</string>
-    <string name="menu_do_something">Do something</string>
-    <string name="highlights_available">Highlights\nAvailable</string>
-    <string name="facebook_application_id" translatable="false">761970038504811</string>
-    <string name="facebook_login_protocol_scheme" translatable="false">fb761970038504811</string>
-    <string name="facebook_client_token">ccdea45ff53398f2a8df95b3233f6674</string>
-    <string name="menu_test_2">Test 1</string>
-    <string name="menu_test_1">Test 2</string>
-    <string name="purchase_pro_version">You can only follow one team.  Would you like to purchase the pro version to follow more than one?  Otherwise your followed team will be replaced with this one.</string>
-    <string name="thankyou">Thank you and enjoy!</string>
-    <string name="no_thankyou">No problem!</string>
-    <string name="you_have_no_teams_followed">You are not following any teams</string>
-    <string name="choose_league">Choose a league</string>
-    <string name="no_teams_found">No teams found</string>
-    <string name="menu_item_purchase_pro">Purchase pro version</string>
-    <string name="menu_item_privacy_policy">Privacy Policy</string>
-    <string name="yes">Yup</string>
-    <string name="no">Nah</string>
-    <string name="no_team_selected">No team selected!</string>
-    <string name="unfollow_title">Are you sure</string>
-    <string name="menu_unfollow_team">Unfollow team…</string>
-    <string name="boxscore_not_available">(BOXSCORE NOT AVAILABLE)</string>
-    <string name="privacy_policy_url">https://www.freeprivacypolicy.com/live/226786c7–4348–4919-bbb7-e0313f06562b</string>
-    <string name="undo">Undo</string>
-    <string name="highlights_fail">Could not load highlights\n%1$s</string>
-    <string name="api_error">An error occurred : %1$s</string>
     <string name="stop_broadcasting_notification_text">Stop Broadcasting</string>
-    <string name="connecting_to_torque">Connecting to Torque…</string>
+    <string name="connecting_to_torque">Waiting for Torque…</string>
     <string name="default_notif_title">PIDCaster</string>
     <string name="connected_to_torque">Connected to Torque</string>
     <string name="old_version_warning">You are using an old version of Torque with this plugin.  The plugin needs the latest version of Torque to run correctly.  Please upgrade to the latest version of Torque from Google Play</string>
-    <string name="failed_to_connect_torque_notif_msg">Failed to connect to Torque</string>
+    <string name="lost_connection_to_torque">Not connected to Torque</string>
     <string name="disconnected_torque_notif_msg">Disconnected from Torque service.</string>
     <string name="service_status">"Service running:"</string>
     <string name="torque_status">"Connected to Torque:"</string>
@@ -61,12 +17,97 @@
     <string name="home">Home</string>
     <string name="wakelock_status">Wakelock is held:</string>
     <string name="processing">Processing…</string>
-    <string name="starting">Starting...</string>
+    <string name="starting">Starting…</string>
     <string name="last_updated_at">Last updated (secs): %1$s</string>
-    <string name="monitor_switch">Monitor PIDs</string>
+    <string name="monitor_switch">Running</string>
     <string name="debug_switch">Debug mode</string>
-    <string name="scan_interval">Scan interval (seconds), %1$d</string>
+    <string name="scan_rate">Scan rate…</string>
     <string name="trigger_log">\n%1$s\n%2$s was triggered\n%3$s %4$s %5$s</string>
-    <string name="log_default">Waiting for Torque...</string>
-    <string name="waiting_for_broadcast">Waiting for broadcast...</string>
+    <string name="trigger_log2">%1$s was triggered\n%2$s %3$s %4$s</string>
+    <string name="log_default">Waiting for Torque…</string>
+    <string name="waiting_for_broadcast">Waiting for broadcast…</string>
+    <string name="pids_updated_main_textview">PIDs were updated: %1$s</string>
+    <string name="scan_interval_1">.1 seconds</string>
+    <string name="scan_interval_2">.5 seconds</string>
+    <string name="scan_interval_3"> 1 second</string>
+    <string name="scan_interval_4"> 3 seconds</string>
+    <string name="scan_interval_5">30 seconds</string>
+    <string name="scan_interval_6">60 seconds</string>
+    <string name="action_use_wakelock">Use wakelock</string>
+    <string name="action_clear_log">Clear log</string>
+    <string name="triggered_pid_entry">%1$d %2$s</string>
+    <string name="broadcast_action">Broadcast sent:\n%1$s</string>
+    <string name="add_alarm_button">Add</string>
+    <string name="value">Value:</string>
+    <string name="operator">Operator:</string>
+    <string name="remove_alarm_button">Remove</string>
+    <string name="btnAddAlarm">Add</string>
+    <string name="broadcast_preamble">com.fimbleenterprises.torquepidcaster.%1$s</string>
+    <string name="copied">Copied to clipboard</string>
+    <string name="log">Log:</string>
+    <string name="update_values_switch_text">Update Values</string>
+    <string name="monitor_values_switch">Show values</string>
+    <string name="min_max_listview">MIN: %1$s/MAX: %2$s</string>
+    <string name="unit">Unit: %1$s</string>
+    <string name="stop">STOP</string>
+    <string name="pidcaster_is_running">PIDCaster is running just fine.</string>
+    <string name="pidcaster_is_running_with_count">PIDCaster is running just fine.\nMonitoring %1$d PIDs.</string>
+    <string name="batt_opt_message">"This plugin will not start automatically with Torque unless you whitelist it in your device's battery settings.  I can't do that for you unfortunately but I can point you in the right direction.
+
+Click below to be taken to Android settings for this app then choose:
+
+        Battery -> Unrestricted
+    </string>
+    <string name="batt_opt_snack_message">App is not optimized for best use.</string>
+    <string name="fix">FIX</string>
+    <string name="take_me_there">Take me there</string>
+    <string name="menu_title_settings">Settings</string>
+
+    <string name="when_connected_broadcast">When ECU connected..</string>
+    <string name="when_disconnected_broadcast">When ECU disconnected.</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="settings">Settings...</string>
+    <string name="when_connected_broadcast_value">ecu_connected</string>
+    <string name="when_disconnected_broadcast_value">ecu_disconnected</string>
+    <string name="settings_header">Settings</string>
+    <string name="default_broadcast_label">%1$s - Sent default broadcast:\n%2$s</string>
+    <string name="pidcaster_starting_up">Starting PIDCaster...</string>
+    <string name="remove_all_menu">Remove all alarms</string>
+    <string name="are_you_sure">Are you sure?</string>
+    <string name="default_broadcast_summary_connected">This broadcast will be sent every time the PID values are refreshed when the ECU is connected.</string>
+    <string name="default_broadcast_summary_disconnected">This broadcast will be sent every time the PID values are refreshed when the ECU is disconnected.</string>
+    <string name="use_imperial_preference_title">Use imperial values.</string>
+    <string name="pref_text_off_using_imperial_values">Values are being shown in metric.</string>
+    <string name="pref_text_on_using_metric_values">Values are being shown in imperial.</string>
+    <string name="show_alarms_menu">Show alarms</string>
+    <string name="pref_privacy_policy">Privacy policy</string>
+    <string name="sent_broadcast">Sent a broadcast!</string>
+    <string name="no_saved_pids_toast">No saved pids</string>
+    <string name="pref_start_service_with_torque">Start with Torque</string>
+    <string name="pref_start_service_with_torque_on">PIDcaster will start and run when Torque is started.</string>
+    <string name="pref_start_service_with_torque_off">PIDcaster will NOT start and run when Torque is started.</string>
+    <string name="pref_start_with_torque_summary">Whether PIDcaster should start monitoring automatically when Torque is started.\n\n(Note that battery optimizations must also be disabled, see below)</string>
+    <string name="pref_scan_interval_summary">How frequently your alarms are evaluated.</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="searchview_query_hint">Search</string>
+    <string name="pref_fix_battery">Battery optimizations…</string>
+    <string name="pref_go_to_app_settings_summary">In order to allow PIDcaster to start automatically you must opt out of Android\'s battery optimization.  \n\nClick this, then choose:
+\n\n\"Battery\" -> \"Unrestricted\"
+\n\n(or similar verbiage).</string>
+    <string name="pref_batt_opt_okay">Battery optimizations are configured correctly.\n\nYou do not need to change anything.</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.fimbleenterprises.torquepidcaster.di
 
+import com.fimbleenterprises.torquepidcaster.data.db.LogsDao
 import com.fimbleenterprises.torquepidcaster.data.db.PidsDao
 import com.fimbleenterprises.torquepidcaster.data.repository.datasource.LocalDatasource
 import com.fimbleenterprises.torquepidcaster.data.repository.datasourceImpl.LocalDatasourceImpl
@@ -15,8 +16,11 @@ class LocalDataSourceModule {
 
     @Provides
     @Singleton
-    fun providesLocalDataSource(pidsDao: PidsDao): LocalDatasource {
-        return LocalDatasourceImpl(pidsDao)
+    fun providesLocalDataSource(
+        pidsDao: PidsDao,
+        logsDao: LogsDao
+    ): LocalDatasource {
+        return LocalDatasourceImpl(pidsDao, logsDao)
     }
 
 }

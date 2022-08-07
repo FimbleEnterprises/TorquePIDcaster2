@@ -1,7 +1,10 @@
 package com.fimbleenterprises.torquepidcaster
 
 import android.util.Log
+import androidx.lifecycle.viewModelScope
 import com.fimbleenterprises.torquepidcaster.data.model.FullPid
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class TestUtil {
 
@@ -19,10 +22,15 @@ class TestUtil {
             for (i in 1..howMany) {
                 val pidInfo = "Acceleration Sensor $i (Total),Accel,g,1,-1,$i"
                 val pidValues = .3 / howMany
-                pids.add(FullPid(pidInfo, pidValues))
+                val pid = FullPid(pidInfo, pidValues)
+                pid.broadcastAction = "POOP"
+                pid.threshold = 1.1
+                pid.operator = FullPid.AlarmOperator.GREATER_THAN
+                pids.add(pid)
             }
             return pids
         }
+
     }
 
 }

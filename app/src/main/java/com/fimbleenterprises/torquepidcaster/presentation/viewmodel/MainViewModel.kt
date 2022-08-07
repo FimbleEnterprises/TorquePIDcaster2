@@ -2,14 +2,16 @@
 
 package com.fimbleenterprises.torquepidcaster.presentation.viewmodel
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.*
 import com.fimbleenterprises.torquepidcaster.data.model.FullPid
+import com.fimbleenterprises.torquepidcaster.data.model.TriggeredPid
 import com.fimbleenterprises.torquepidcaster.domain.service.*
-import com.fimbleenterprises.torquepidcaster.domain.usecases.DeletePidUseCase
-import com.fimbleenterprises.torquepidcaster.domain.usecases.GetSavedPidsUseCase
-import com.fimbleenterprises.torquepidcaster.domain.usecases.SavePidUseCase
+import com.fimbleenterprises.torquepidcaster.domain.usecases.*
+import com.fimbleenterprises.torquepidcaster.util.Helpers
+import com.google.android.gms.tasks.Tasks.await
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
@@ -21,14 +23,23 @@ class MainViewModel (
     private val serviceMessenger: ServiceMessenger,
     private val savePidUseCase: SavePidUseCase,
     private val getSavedPidsUseCase: GetSavedPidsUseCase,
-    private val deletePidUseCase: DeletePidUseCase
+    private val deletePidUseCase: DeletePidUseCase,
+    private val insertLogEntryUseCase : InsertLogEntryUseCase,
+    private val getLogEntriesUseCase : GetLogEntriesUseCase,
+    private val deleteLogEntriesUseCase: DeleteLogEntriesUseCase
 ) : ViewModel(), ServiceMessenger.ServiceListener {
 
     // region Private, MutableLiveData values
     // Observers will use the public LiveData instead of these private MutableLiveData values.
+    private val _showValuesOnMainFrag: MutableLiveData<Boolean> = MutableLiveData(false)
     private val _isConnectedToEcu: MutableLiveData<Boolean> = MutableLiveData(false)
     private val _isConnectedToTorque: MutableLiveData<Boolean> = MutableLiveData(false)
     private val _allPids: MutableLiveData<ArrayList<FullPid>> = MutableLiveData()
+    private val _filteredPids: MutableLiveData<ArrayList<FullPid>> = MutableLiveData()
+    /*When we are filtering we change the _allPids list for observers.  We use this arraylist to
+    continue tracking the updates from the service so that we can instantly rebuild the _allPids
+    array when filtering finished without having to wait for a new update.*/
+    private var _allPidsLatestValues: ArrayList<FullPid> = ArrayList()
     private val _serviceRunning: MutableLiveData<Boolean> = MutableLiveData(false)
     private val _wakeLockHeld: MutableLiveData<Boolean> = MutableLiveData(false)
     private val _deleteCount: MutableLiveData<Int> = MutableLiveData()
@@ -36,10 +47,29 @@ class MainViewModel (
     private var _torqueConnectionState: MutableLiveData<TorqueServiceConnectionState> = MutableLiveData()
     private var _wakelockState: MutableLiveData<WakelockState> = MutableLiveData()
     private var _monitoredPids: MutableLiveData<ArrayList<FullPid>> = MutableLiveData()
-    private var _triggeredPid: MutableLiveData<FullPid> = MutableLiveData()
+    private var _triggeredPids: MutableLiveData<ArrayList<TriggeredPid>> = MutableLiveData()
+    private var _triggeredPidsLocalList = ArrayList<TriggeredPid>()
+    private var _defaultBroadcastValue: MutableLiveData<String> = MutableLiveData()
+    private var _forceRedraw: MutableLiveData<ArrayList<FullPid>> = MutableLiveData()
+    /* Flag used to determine whether or not to apply the updated PIDs that are received from the
+       service to update the _allPids array. */
+    var isFiltering = false
+    var filterString: String? = null
+    var showSavedOnly = false
     // endregion
 
     // region Public, observable LiveData  values
+    /**
+     * Shows the broadcast action that is sent on every loop of the service stating the ECU
+     * connection status.
+     */
+    val defaultBroadcastValue: LiveData<String> = _defaultBroadcastValue
+
+    /**
+     * Show values in the recyclerview as Torque retrieves them.
+     */
+    val showRealtimeValues: LiveData<Boolean> = _showValuesOnMainFrag
+
     /**
      * Used as a quasi-callback when deleting rows from the db.  Value represents how many rows were
      * successfully deleted.
@@ -76,6 +106,13 @@ class MainViewModel (
     val allPids: LiveData<ArrayList<FullPid>> = _allPids
 
     /**
+     * Contains a list of all PIDs obtained by our foreground service (and by extension the ITorqueService).
+     * This list is updated every couple of seconds while the foreground service is running and is
+     * connected to the 3rd party, ITorqueService.
+     */
+    val filteredPids: LiveData<ArrayList<FullPid>> = _filteredPids
+
+    /**
      * Gets the current state of the foreground service.
      */
     val serviceConnectionState: LiveData<ServiceRunningState> = _serviceConnectionState
@@ -91,14 +128,19 @@ class MainViewModel (
     val wakelockState: LiveData<WakelockState> = _wakelockState
 
     /**
-     * PIDs saved to the local database - these are the monitored PIDs
+     * PIDs saved to the local database
      */
      val monitoredPids: LiveData<ArrayList<FullPid>> = _monitoredPids
 
     /**
      * PIDs that were triggered by the service and broadcasts were sent.
      */
-    val triggeredPids: LiveData<FullPid> = _triggeredPid
+    val triggeredPids: LiveData<ArrayList<TriggeredPid>> = _triggeredPids
+
+    /**
+     * When true all observers should resubmit the list to their adapter or call notifyDatasetChanged
+     */
+    val forceRedraw: LiveData<ArrayList<FullPid>> = _forceRedraw
     // endregion
 
     /**
@@ -125,8 +167,9 @@ class MainViewModel (
     }
 
     /**
-     * Events sourced from the PidMonitoringService and reflect the status of our connection to
-     * Torque itself.  If "true" we can call methods of the Torque service.
+     * Since this viewmodel implements the ServiceMessenger.ServiceListener we must override this
+     * method and by doing so we can monitor the status of our connection to Torque itself.  If
+     * "true" our service can call methods from the Torque service.
      */
     override fun onTorqueServiceConnectionChanged(state: TorqueServiceConnectionState) {
 
@@ -156,27 +199,98 @@ class MainViewModel (
     }
 
     /**
-     * By virtue of overriding the ServiceMessenger.OnFullPidsUpdated we receive the full list of
-     * pids that our foreground service retrieved from the 3rd party ITorqueService.  We will
-     * look for pids that match the one's the user has selected for monitoring.
+     * Since this viewmodel implements the ServiceMessenger.ServiceListener we must override this
+     * method we receive the full list of pids that our foreground service retrieved from the 3rd
+     * party ITorqueService.  We will look for pids that match the one's the user has selected for
+     * monitoring.
      */
     override fun onFullPidsUpdated(updatedPids: ArrayList<FullPid>) {
 
-        // Update the livedata for any observers
-        _allPids.value = updatedPids
+        // Keep our private list always current
+        _allPidsLatestValues = updatedPids
+
+        if (!isFiltering) {
+            // Update the livedata for any observers
+            _allPids.value = updatedPids
+        } else if (showSavedOnly) {
+            showSavedOnly(true)
+        } else {
+            filterPidsByName(filterString)
+        }
 
     }
 
     /**
-     * By virtue of overriding the ServiceMessenger.onTriggeredPidsUpdated we receive the full list of
-     * pids that our foreground service retrieved from the 3rd party ITorqueService.  We will
-     * look for pids that match the one's the user has selected for monitoring.
+     * Filters all pids and changes the allPids MutableLiveData so observers will see only the
+     * filtered pids.  IMPORTANT: Pass null or an empty string to finish filtering and go back
+     * to real-time pids.
      */
-    override fun onTriggeredPidUpdated(triggeredPid: FullPid) {
+    fun filterPidsByName(query: String?) {
 
-        // Update livedata
-        _triggeredPid.value = triggeredPid
+        isFiltering = !query.isNullOrEmpty()
+        filterString = query
 
+        val filteredArray = ArrayList<FullPid>()
+        allPids.value?.forEach {
+            if (isFiltering && it.id.lowercase().contains(query!!.lowercase())) {
+                filteredArray.add(it)
+            }
+        }
+        _filteredPids.value = filteredArray
+
+        // We need a way to trigger the observer otherwise the list will not be updated since
+        //  it technically hasn't changed.
+        _allPids.value = _allPidsLatestValues
+    }
+
+    /**
+     * Filters all pids and changes the allPids MutableLiveData so observers will see only the
+     * filtered pids.  IMPORTANT: Pass null or an empty string to finish filtering and go back
+     * to real-time pids.
+     */
+    fun showSavedOnly(boolean: Boolean) {
+
+        isFiltering = boolean
+        showSavedOnly = boolean
+
+        /**
+         * Build a new array of only our saved PIDs by looping over all known pids and adding
+         * only ones found with their [FullPid.isMonitored] flag set to true. */
+        val filteredArray = ArrayList<FullPid>()
+        allPids.value?.forEach {
+            if (showSavedOnly && it.isMonitored) {
+                filteredArray.add(it)
+            }
+        }
+        /**
+         * Update the filtered pids livedata with our newly built array.
+         */
+        _filteredPids.value = filteredArray
+
+        /** We need a way to alert observers watching the the [_allPids] livedata that it has
+         * changed - just adding/removing items will not do it - the value itself needs to change
+         * so we do that here. */
+        _allPids.value = _allPidsLatestValues
+    }
+
+    /**
+     * Since this viewmodel implements the ServiceMessenger.ServiceListener we must override this
+     * method and by doing so can keep a real-time tally of whether or not Torque is connected to
+     * the vehicle's ECU.
+     */
+    override fun onEcuConnectionListener(state: ConnectedToECUState) {
+        when (state) {
+            ConnectedToECUState.NOTCONNECTED -> _isConnectedToEcu.value = false
+            ConnectedToECUState.CONNECTED -> _isConnectedToEcu.value = true
+        }
+    }
+
+    /**
+     * Since this viewmodel implements the ServiceMessenger.ServiceListener we must override this
+     * method and by doing so can keep a real-time tally of the default broadcast being sent.
+     */
+    override fun onDefaultBroadcastSent(action: String) {
+        _defaultBroadcastValue.value = action
     }
 
     /**
@@ -186,10 +300,10 @@ class MainViewModel (
 
         // Find this pid in our in-memory array of pids and update its monitored flag.
         _allPids.value?.get(pos)?.isMonitored = true
-        pid.broadcastAction = "fuck"
 
         // Save this pid to persistent storage for use next time we instantiate this viewmodel.
         viewModelScope.launch(IO) {
+            pid.isMonitored = true
             savePidUseCase.execute(pid)
         }
     }
@@ -197,7 +311,7 @@ class MainViewModel (
     /**
      * Removes a pid from the database.
      */
-    suspend fun deletePid(pid: FullPid, pos: Int) {
+    suspend fun stopMonitoringPid(pid: FullPid, pos: Int) {
 
         // Update our in-memory array immediately
         _allPids.value?.get(pos)?.isMonitored = false
@@ -207,7 +321,7 @@ class MainViewModel (
 
         // Populate the temp array with the values we intend to remove.
         _monitoredPids.value?.forEach {
-            if (it.fullName == pid.fullName) {
+            if (it.id == pid.id) {
                 pidsToRemove.add(it)
             }
         }
@@ -222,6 +336,39 @@ class MainViewModel (
         viewModelScope.launch(IO){
             deletePidUseCase.execute(pid)
         }
+    }
+
+    /**
+     * Removes all saved pids from the database.
+     */
+    suspend fun stopMonitoringAllPids(): Int {
+        val count = deletePidUseCase.executeMany()
+        withContext(Main) {
+            _allPidsLatestValues.forEach {
+               it.isMonitored = false
+            }
+            _forceRedraw.value = _allPidsLatestValues
+        }
+        return count
+    }
+
+    /**
+     * Removes all [TriggeredPid]s from the database.
+     */
+    fun clearLog() {
+        viewModelScope.launch(IO) {
+            deleteLogEntriesUseCase.executeMany()
+        }
+    }
+
+    /**
+     * Since this viewmodel implements the ServiceMessenger.ServiceListener we must override this
+     * method and by doing so we get notified whenever a PID has triggered and sent a broadcast.
+     */
+    override fun onPidTriggered(triggeredPid: TriggeredPid) {/* Nothing to do here in viewmodel */}
+
+    fun showValuesInListView(value: Boolean) {
+        _showValuesOnMainFrag.value = value
     }
 
     /**
@@ -245,6 +392,13 @@ class MainViewModel (
         app.stopService(intent)
     }
 
+    /**
+     * Private method to save space.
+     */
+    private fun context(): Context {
+        return app.applicationContext
+    }
+
     override fun onCleared() {
         super.onCleared()
 
@@ -259,16 +413,35 @@ class MainViewModel (
         _deleteCount.value = 0
     }
 
+    /**
+     * Checks if the app is currently under the thumb of the OS battery nazis.
+     */
+    fun isIgnoringBattOptimizations(): Boolean {
+        return Helpers.Application.isIgnoringBatteryOptimizations(context())
+    }
+
     init {
         Log.i(TAG, "Initialized:MainViewModel")
 
         // Grab the saved pids array from persistent storage (Room) and assign it to our in-memory
-        // monitored pids array.
+        // monitored pids array and continue to monitor it for changes, updating the livedata when
+        // it does.
         viewModelScope.launch(Main) {
             getSavedPidsUseCase.execute().collect() {
                 _monitoredPids.value = ArrayList(it)
             }
         }
+
+        // Get the log entries from the DB and continue to monitor it, updating the livedata as
+        // records are added/removed.
+        viewModelScope.launch(Main) {
+            getLogEntriesUseCase.executeMany().collect {
+                _triggeredPids.value = ArrayList(it)
+            }
+        }
+
+        // Initialize the arraylist for triggered pids
+        _triggeredPidsLocalList = ArrayList<TriggeredPid>()
     }
     companion object { private const val TAG = "FIMTOWN|MainViewModel" }
 

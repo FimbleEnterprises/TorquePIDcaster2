@@ -6,6 +6,9 @@ import com.fimbleenterprises.torquepidcaster.domain.repository.MainRepository
 
 class SavePidUseCase(private val mainRepository: MainRepository) {
 
+    /**
+     * Saves a single [FullPid] object to the database.
+     */
     suspend fun execute(pid : FullPid) : Long = mainRepository.savePid(pid)
 
     init { Log.i(TAG, "Initialized:SavePidUseCase") }

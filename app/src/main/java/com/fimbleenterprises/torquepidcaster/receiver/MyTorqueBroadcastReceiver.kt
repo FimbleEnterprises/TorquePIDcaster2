@@ -21,6 +21,12 @@ open class MyTorqueBroadcastReceiver : BroadcastReceiver() {
                     val serviceStartIntent = Intent(context, PidMonitoringService::class.java)
                     context.startService(serviceStartIntent)
                     Toast.makeText(context, context.getString(R.string.pidcaster_starting_up), Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.cannot_start_automatically),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             OBD_CONNECTED -> {

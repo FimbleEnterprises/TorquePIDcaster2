@@ -400,7 +400,7 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection, Lifecyc
                                         lastBroadcast = System.currentTimeMillis()
 
                                         // Save this alert to the database log
-                                        while(logEntries.size > 50) {
+                                        while(logEntries.size > MyApp.AppPreferences.maxLogEntries) {
                                             deleteLogEntriesUseCase.execute(logEntries[0])
                                         }
                                         insertLogEntryUseCase.execute(triggeredPid)
@@ -464,10 +464,6 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection, Lifecyc
             true,
             PluginActivity::class.java
         )
-    }
-
-    fun buildNotificationMessage(pid: FullPid) {
-
     }
 
     // Sends out the broadcast action declaring the connected to ECU state.

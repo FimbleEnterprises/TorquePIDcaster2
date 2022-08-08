@@ -17,9 +17,11 @@
         android:layout_marginTop="15dp"
         android:layout_marginEnd="15dp"
         android:layout_marginBottom="15dp"
+        app:backgroundTint="#FFFFFF"
         android:clickable="true"
         android:src="@drawable/ic_notifications_black_24dp"
-        app:backgroundTint="@color/colorPrimaryAlt" />
+        android:tint="@color/colorAccent"
+        android:contentDescription="@string/show_saved_only" />
 
     <RelativeLayout
         android:id="@+id/controls"
@@ -40,7 +42,7 @@
             android:textColor="#0303EA"
             android:textSize="15sp" />
 
-        <SearchView
+        <android.widget.SearchView
             android:id="@+id/searchview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -48,7 +50,7 @@
             android:layout_marginStart="5dp"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
-            android:layout_toRightOf="@id/swtch_realtime_values"
+            android:layout_toEndOf="@id/swtch_realtime_values"
             android:inputType="textCapCharacters"
             android:layoutDirection="rtl" />
     </RelativeLayout>

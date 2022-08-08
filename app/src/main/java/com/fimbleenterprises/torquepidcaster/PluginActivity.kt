@@ -2,13 +2,21 @@ package com.fimbleenterprises.torquepidcaster
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.Debug
 import android.os.PowerManager
 import android.provider.Settings
+import android.text.Html
 import android.util.Log
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.RelativeLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.text.HtmlCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -42,7 +50,7 @@ class PluginActivity : AppCompatActivity() {
         viewmodel.startService(Debug.isDebuggerConnected())
 
         // Obtain the FirebaseAnalytics instance.
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         binding = ActivityPluginBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -58,9 +66,13 @@ class PluginActivity : AppCompatActivity() {
                 R.id.navigation_main, R.id.navigation_choose_pids
             )
         )
+
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
-
+        /*supportActionBar?.setBackgroundDrawable(ColorDrawable(Color.parseColor("#000000")))
+        supportActionBar?.title = Html.fromHtml(
+            "<font color='#FFFFFF'>${getString(R.string.app_name)}</font>"
+        )*/
 
         initMonitorService()
 
@@ -70,17 +82,17 @@ class PluginActivity : AppCompatActivity() {
     }
 
     private fun showSnackBar() {
-        val snack = Snackbar.make(
+
+        val snackbar = Snackbar.make(
             binding.root,
             getString(R.string.batt_opt_snack_message),
             Snackbar.LENGTH_INDEFINITE
         )
-        snack.setAction(
-            getString(R.string.fix)
-        ) {
-            // build alert dialog
+
+        snackbar.setAction(getString(R.string.fix)) {
             val dialogBuilder = AlertDialog.Builder(this)
-            dialogBuilder.setMessage(getString(R.string.batt_opt_message))
+            dialogBuilder
+                .setMessage(getString(R.string.batt_opt_message))
                 .setCancelable(true)
                 .setPositiveButton(getString(R.string.take_me_there)) { _, _ ->
                     Helpers.Application.sendToAppSettings(this)
@@ -88,7 +100,7 @@ class PluginActivity : AppCompatActivity() {
             val alert = dialogBuilder.create()
             alert.show()
         }
-        snack.show()
+        snackbar.show()
     }
 
     private fun initMonitorService() {

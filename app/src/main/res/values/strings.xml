@@ -80,12 +80,12 @@ Click below to be taken to Android settings for this app then choose:
     <string name="attachment_summary_on">Automatically download attachments for incoming emails
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
-    <string name="settings">Settings...</string>
+    <string name="settings">Settings…</string>
     <string name="when_connected_broadcast_value">ecu_connected</string>
     <string name="when_disconnected_broadcast_value">ecu_disconnected</string>
     <string name="settings_header">Settings</string>
     <string name="default_broadcast_label">%1$s - Sent default broadcast:\n%2$s</string>
-    <string name="pidcaster_starting_up">Starting PIDCaster...</string>
+    <string name="pidcaster_starting_up">Starting PIDCaster…</string>
     <string name="remove_all_menu">Remove all alarms</string>
     <string name="are_you_sure">Are you sure?</string>
     <string name="default_broadcast_summary_connected">This broadcast will be sent every time the PID values are refreshed when the ECU is connected.</string>
@@ -109,5 +109,10 @@ Click below to be taken to Android settings for this app then choose:
     <string name="pref_go_to_app_settings_summary">In order to allow PIDcaster to start automatically you must opt out of Android\'s battery optimization.  \n\nClick this, then choose:
 \n\n\"Battery\" -> \"Unrestricted\"
 \n\n(or similar verbiage).</string>
+    <string name="show_saved_only_content">Show saved pids only</string>
     <string name="pref_batt_opt_okay">Battery optimizations are configured correctly.\n\nYou do not need to change anything.</string>
+    <string name="cannot_start_automatically">PIDcaster cannot start automatically - open app for details!</string>
+    <string name="delete_all">Delete log</string>
+    <string name="show_saved_only">Show saved only</string>
+    <string name="broadcast_icon_content">Flashes when alarms are evaluated.</string>
 </resources>

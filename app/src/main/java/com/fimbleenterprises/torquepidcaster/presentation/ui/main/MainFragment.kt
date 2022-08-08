@@ -140,7 +140,18 @@ class MainFragment : Fragment() {
         // Effects a running log of (non-default) broadcasts sent
         viewmodel.triggeredPids.observe(viewLifecycleOwner) {
             if (!isScrolling) {
-                binding.recyclerView.scrollToPosition(it.size)
+                // This is a bit wacky but if I use scrollToPosition before the log is "full" it won't
+                // scroll to the end, period, until it is.  If I use smoothScroll prior it keeps the
+                // it scrolled to the end (though not smoothly /shrug) fine.  Once it fills up it
+                // looks great - I think it is because of the fact that the list is having a record
+                // removed then added but I don't know.
+                if (it.size > 0) {
+                    if (it.size >= MyApp.AppPreferences.maxLogEntries) {
+                        binding.recyclerView.scrollToPosition(it.size - 1)
+                    } else {
+                        binding.recyclerView.smoothScrollToPosition(it.size - 1)
+                    }
+                }
                 adapter.differ.submitList(it)
                 adapter.notifyItemRangeChanged(0, it.size)
             }

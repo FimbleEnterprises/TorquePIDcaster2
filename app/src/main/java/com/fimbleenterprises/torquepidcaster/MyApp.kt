@@ -66,19 +66,20 @@ class MyApp : Application() {
         private const val PREF_SHOW_VALUES_IN_LISTVIEW = "PREF_SHOW_VALUES_IN_LISTVIEW"
         private const val PREF_USE_IMPERIAL = "PREF_USE_IMPERIAL"
         private const val PREF_START_SERVICE_WITH_TORQUE = "PREF_START_SERVICE_WITH_TORQUE"
+        private const val PREF_MAX_LOG_SIZE = "PREF_MAX_LOG_SIZE"
 
         /**
          * The time in MS between calls to the Torque service to update the PIDs
          */
         var scanInterval: Float
             get() = prefs.getString(PREF_SCAN_INTERVAL, "500")!!.toFloat()
-            set(value: Float) {
+            set(value) {
                 prefs.edit().putString(PREF_SCAN_INTERVAL, value.toString()).apply()
             }
 
         var useImperial: Boolean
         get() = prefs.getBoolean(PREF_USE_IMPERIAL, false)
-        set(value: Boolean) {
+        set(value) {
             prefs.edit().putBoolean(PREF_USE_IMPERIAL, value).apply()
         }
 
@@ -90,19 +91,25 @@ class MyApp : Application() {
 
         var startServiceWithTorque: Boolean
             get() = prefs.getBoolean(PREF_START_SERVICE_WITH_TORQUE, true)
-            set(value: Boolean) {
+            set(value) {
                 prefs.edit().putBoolean(PREF_START_SERVICE_WITH_TORQUE, value).apply()
+            }
+
+        var maxLogEntries: Int
+            get() = prefs.getInt(PREF_MAX_LOG_SIZE, 50)
+            set(value) {
+                prefs.edit().putInt(PREF_MAX_LOG_SIZE, value).apply()
             }
 
         var disconnectedFromEcu: String
             get() = prefs.getString(PREF_WHILE_DISCONNECTED_ACTION, "ECU_DISCONNECTED")!!
-            set(value: String) {
+            set(value) {
                 prefs.edit().putString(PREF_WHILE_DISCONNECTED_ACTION, value).apply()
             }
 
         var connectedToEcu: String
             get() = prefs.getString(PREF_WHILE_CONNECTED_ACTION, "ECU_CONNECTED")!!
-            set(value: String) {
+            set(value) {
                 prefs.edit().putString(PREF_WHILE_CONNECTED_ACTION, value).apply()
             }
 
@@ -111,7 +118,7 @@ class MyApp : Application() {
          */
         var useWakelock: Boolean
             get() = prefs.getBoolean(PREF_USE_WAKELOCK, false)
-            set(value: Boolean) {
+            set(value) {
                 prefs.edit().putBoolean(PREF_USE_WAKELOCK, value).apply()
             }
 

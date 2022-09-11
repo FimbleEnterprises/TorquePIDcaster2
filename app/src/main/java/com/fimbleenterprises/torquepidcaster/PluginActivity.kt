@@ -82,6 +82,13 @@ class PluginActivity : AppCompatActivity() {
         }
 
         MobileAds.initialize(this)
+
+        val adRequest1 = AdRequest.Builder().build()
+        binding.adViewBottom.loadAd(adRequest1)
+        val adRequest2 = AdRequest.Builder().build()
+        binding.adViewTop.loadAd(adRequest2)
+
+
     }
 
     private fun showSnackBar() {

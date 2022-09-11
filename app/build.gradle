@@ -19,8 +19,8 @@ android {
         applicationId "com.fimbleenterprises.torquepidcaster"
         minSdk 26
         targetSdk 32
-        versionCode 8
-        versionName "1.1"
+        versionCode 10
+        versionName "1.3"
         ndk {
             debugSymbolLevel 'SYMBOL_TABLE'
         }

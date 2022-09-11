@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         app:adSize="BANNER"
-        app:adUnitId="ca-app-pub-4244925080834893/9763037587" />
+        app:adUnitId="ca-app-pub-4244925080834893/3069389303" />
 
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switchService"
@@ -61,6 +61,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         app:adSize="BANNER"
-        app:adUnitId="ca-app-pub-4244925080834893/9493227238" />
+        app:adUnitId="ca-app-pub-4244925080834893/4386889144" />
 
 </RelativeLayout>

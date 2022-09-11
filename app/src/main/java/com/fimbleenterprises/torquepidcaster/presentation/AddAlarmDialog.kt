@@ -65,9 +65,9 @@ class AddAlarmDialog constructor(
 
         val broadcastExample = this.findViewById(R.id.txtFullAction) as TextView
         if (clickedPid.getBroadcastAction().isNullOrEmpty()) {
-            broadcastExample.text = context.getString(R.string.broadcast_preamble, clickedPid.shortName?.replace(" ","_")?.uppercase())
+            broadcastExample.text = context.getString(R.string.fully_qualified_broadcast, clickedPid.shortName?.replace(" ","_")?.uppercase())
         } else {
-            broadcastExample.text = context.getString(R.string.broadcast_preamble, clickedPid.getBroadcastAction())
+            broadcastExample.text = context.getString(R.string.fully_qualified_broadcast, clickedPid.getBroadcastAction())
         }
 
         val copyButton = this.findViewById(R.id.imgCopy) as ImageButton
@@ -89,9 +89,9 @@ class AddAlarmDialog constructor(
             override fun afterTextChanged(s: Editable) {}
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                broadcastExample.text = context.getString(R.string.broadcast_preamble, s)
+                broadcastExample.text = context.getString(R.string.fully_qualified_broadcast, s)
                 clickedPid.setBroadcastAction(s.toString())
-                broadcastExample.text = context.getString(R.string.broadcast_preamble, clickedPid.getBroadcastAction())
+                broadcastExample.text = context.getString(R.string.fully_qualified_broadcast, clickedPid.getBroadcastAction())
             }
         })
 

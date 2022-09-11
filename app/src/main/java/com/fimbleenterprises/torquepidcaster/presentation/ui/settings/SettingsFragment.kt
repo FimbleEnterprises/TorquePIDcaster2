@@ -1,7 +1,6 @@
 package com.fimbleenterprises.torquepidcaster.presentation.ui.settings
 
 import android.content.*
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -36,6 +35,26 @@ class SettingsFragment : PreferenceFragmentCompat(), PreferenceChangeListener,
             true
         }
 
+        val prefCopyEcuConn = findPreference<Preference>(PREF_COPY_ECU_CONN_CLIPBOARD)
+        prefCopyEcuConn?.setOnPreferenceClickListener {
+            Context.CLIPBOARD_SERVICE
+            val clipboard: ClipboardManager? = ContextCompat.getSystemService(requireContext(), ClipboardManager::class.java)
+            val clip = ClipData.newPlainText("", getString(R.string.fully_qualified_broadcast, MyApp.AppPreferences.ecuConnectedBroadcastAction))
+            clipboard?.setPrimaryClip(clip)
+            Toast.makeText(context, getString(R.string.copied), Toast.LENGTH_SHORT).show()
+            true
+        }
+
+        val prefCopyEcuDisConn = findPreference<Preference>(PREF_COPY_ECU_DISCONN_CLIPBOARD)
+        prefCopyEcuDisConn?.setOnPreferenceClickListener {
+            Context.CLIPBOARD_SERVICE
+            val clipboard: ClipboardManager? = ContextCompat.getSystemService(requireContext(), ClipboardManager::class.java)
+            val clip = ClipData.newPlainText("", getString(R.string.fully_qualified_broadcast, MyApp.AppPreferences.ecuDisconnectedBroadcastAction))
+            clipboard?.setPrimaryClip(clip)
+            Toast.makeText(context, getString(R.string.copied), Toast.LENGTH_SHORT).show()
+            true
+        }
+
         when (Helpers.Application.isIgnoringBatteryOptimizations(activity)) {
             true -> {
                 prefBatteryOpt.summary = getString(R.string.pref_batt_opt_okay)
@@ -53,6 +72,8 @@ class SettingsFragment : PreferenceFragmentCompat(), PreferenceChangeListener,
         private const val PREF_WHILE_CONNECTED_ACTION = "PREF_WHILE_CONNECTED_ACTION"
         private const val PREF_WHILE_DISCONNECTED_ACTION = "PREF_WHILE_DISCONNECTED_ACTION"
         private const val PREF_BATT_OPT = "PREF_BATT_OPT"
+        private const val PREF_COPY_ECU_DISCONN_CLIPBOARD = "PREF_COPY_ECU_DISCONN_CLIPBOARD"
+        private const val PREF_COPY_ECU_CONN_CLIPBOARD = "PREF_COPY_ECU_CONN_CLIPBOARD"
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
@@ -62,7 +83,7 @@ class SettingsFragment : PreferenceFragmentCompat(), PreferenceChangeListener,
                 Context.CLIPBOARD_SERVICE
                 val clipboard: ClipboardManager? =
                     ContextCompat.getSystemService(requireContext(), ClipboardManager::class.java)
-                val clip = ClipData.newPlainText("", MyApp.AppPreferences.connectedToEcu)
+                val clip = ClipData.newPlainText("", MyApp.AppPreferences.ecuConnectedBroadcastAction)
                 clipboard?.setPrimaryClip(clip)
                 Toast.makeText(context, getString(R.string.copied), Toast.LENGTH_SHORT).show()
             }
@@ -71,7 +92,7 @@ class SettingsFragment : PreferenceFragmentCompat(), PreferenceChangeListener,
                 Context.CLIPBOARD_SERVICE
                 val clipboard: ClipboardManager? =
                     ContextCompat.getSystemService(requireContext(), ClipboardManager::class.java)
-                val clip = ClipData.newPlainText("", MyApp.AppPreferences.disconnectedFromEcu)
+                val clip = ClipData.newPlainText("", MyApp.AppPreferences.ecuDisconnectedBroadcastAction)
                 clipboard?.setPrimaryClip(clip)
                 Toast.makeText(context, getString(R.string.copied), Toast.LENGTH_SHORT).show()
             }

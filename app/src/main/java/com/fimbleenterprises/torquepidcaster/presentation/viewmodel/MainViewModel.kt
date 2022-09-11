@@ -138,7 +138,8 @@ class MainViewModel (
     val triggeredPids: LiveData<ArrayList<TriggeredPid>> = _triggeredPids
 
     /**
-     * When true all observers should resubmit the list to their adapter or call notifyDatasetChanged
+     * When this data changes all observers should resubmit this list to their adapter or call
+     * notifyDatasetChanged.
      */
     val forceRedraw: LiveData<ArrayList<FullPid>> = _forceRedraw
     // endregion

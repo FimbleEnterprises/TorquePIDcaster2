@@ -7,7 +7,7 @@ import com.fimbleenterprises.torquepidcaster.data.model.TriggeredPid
 
 @Database(
     entities = [FullPid::class, TriggeredPid::class],
-    version = 2,
+    version = 1,
     exportSchema = false
 )
 

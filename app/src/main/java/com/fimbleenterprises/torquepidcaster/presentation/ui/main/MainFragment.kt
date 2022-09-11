@@ -19,6 +19,8 @@ import com.fimbleenterprises.torquepidcaster.domain.service.WakelockState
 import com.fimbleenterprises.torquepidcaster.presentation.adapters.TriggeredPidsAdapter
 import com.fimbleenterprises.torquepidcaster.presentation.viewmodel.MainViewModel
 import com.fimbleenterprises.torquepidcaster.util.Helpers
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
 import dagger.hilt.android.AndroidEntryPoint
 import org.joda.time.DateTime
 import javax.inject.Inject
@@ -31,6 +33,7 @@ class MainFragment : Fragment() {
     lateinit var adapter: TriggeredPidsAdapter
     private lateinit var binding: FragmentMainBinding
     private lateinit var viewmodel: MainViewModel
+
     private var isScrolling = false
 
     override fun onCreateView(

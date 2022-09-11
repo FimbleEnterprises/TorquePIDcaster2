@@ -26,6 +26,9 @@ import com.fimbleenterprises.torquepidcaster.databinding.ActivityPluginBinding
 import com.fimbleenterprises.torquepidcaster.presentation.viewmodel.MainViewModel
 import com.fimbleenterprises.torquepidcaster.presentation.viewmodel.MainViewModelFactory
 import com.fimbleenterprises.torquepidcaster.util.Helpers
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -40,9 +43,7 @@ class PluginActivity : AppCompatActivity() {
     lateinit var viewModelFactory: MainViewModelFactory
     var mFirebaseAnalytics: FirebaseAnalytics? = null
     private lateinit var binding: ActivityPluginBinding
-
     lateinit var viewmodel: MainViewModel
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -79,6 +80,8 @@ class PluginActivity : AppCompatActivity() {
         if (!viewmodel.isIgnoringBattOptimizations()) {
             showSnackBar()
         }
+
+        MobileAds.initialize(this)
     }
 
     private fun showSnackBar() {

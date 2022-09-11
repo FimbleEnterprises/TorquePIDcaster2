@@ -101,16 +101,16 @@ class MyApp : Application() {
                 prefs.edit().putInt(PREF_MAX_LOG_SIZE, value).apply()
             }
 
-        var disconnectedFromEcu: String
-            get() = prefs.getString(PREF_WHILE_DISCONNECTED_ACTION, "ECU_DISCONNECTED")!!
-            set(value) {
-                prefs.edit().putString(PREF_WHILE_DISCONNECTED_ACTION, value).apply()
-            }
-
-        var connectedToEcu: String
+        var ecuConnectedBroadcastAction: String
             get() = prefs.getString(PREF_WHILE_CONNECTED_ACTION, "ECU_CONNECTED")!!
             set(value) {
                 prefs.edit().putString(PREF_WHILE_CONNECTED_ACTION, value).apply()
+            }
+
+        var ecuDisconnectedBroadcastAction: String
+            get() = prefs.getString(PREF_WHILE_DISCONNECTED_ACTION, "ECU_DISCONNECTED")!!
+            set(value) {
+                prefs.edit().putString(PREF_WHILE_DISCONNECTED_ACTION, value).apply()
             }
 
         /**

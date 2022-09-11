@@ -3,6 +3,9 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/weber/AndroidStudioProjects/TorquePidcaster/app/src/main/res/layout/activity_plugin.xml" value="0.50625" />
+        <entry key="..\:/Users/weber/AndroidStudioProjects/TorquePidcaster/app/src/main/res/layout/fragment_choose_pids.xml" value="0.50625" />
+        <entry key="..\:/Users/weber/AndroidStudioProjects/TorquePidcaster/app/src/main/res/layout/fragment_main.xml" value="0.50625" />
         <entry key="..\:/Users/weber/AndroidStudioProjects/Udemy/Java/TorquePidcaster/app/src/main/res/drawable/btn_glass_gray.xml" value="0.274" />
         <entry key="..\:/Users/weber/AndroidStudioProjects/Udemy/Java/TorquePidcaster/app/src/main/res/drawable/btn_play.xml" value="0.305" />
         <entry key="..\:/Users/weber/AndroidStudioProjects/Udemy/Java/TorquePidcaster/app/src/main/res/layout/activity_main.xml" value="0.5421875" />

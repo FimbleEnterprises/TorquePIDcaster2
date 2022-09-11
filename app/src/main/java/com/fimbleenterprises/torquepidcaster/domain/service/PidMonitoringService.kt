@@ -12,7 +12,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleService
-import com.fimbleenterprises.torquepidcaster.MyApp
+import com.fimbleenterprises.torquepidcaster.MyApp.AppPreferences
 import com.fimbleenterprises.torquepidcaster.PluginActivity
 import com.fimbleenterprises.torquepidcaster.R
 import com.fimbleenterprises.torquepidcaster.data.model.FullPid
@@ -26,9 +26,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.joda.time.DateTime
 import org.prowl.torque.remote.ITorqueService
@@ -171,7 +169,7 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection, Lifecyc
     private fun bindToTorqueService() {
         try {
 
-            if (MyApp.AppPreferences.useWakelock) {
+            if (AppPreferences.useWakelock) {
                 if (!wakeLock.isHeld) {
                     wakeLock.acquire()
                     serviceMessenger.wakelockAcquired()
@@ -292,10 +290,10 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection, Lifecyc
                 doDefaultBroadcast()
                 getAndProcessTorquePids()
                 reportEcuConnectionState()
-                myHandler.postDelayed(runner!!, (MyApp.AppPreferences.scanInterval).toLong())
+                myHandler.postDelayed(runner!!, (AppPreferences.scanInterval).toLong())
             }
         }
-        myHandler.postDelayed(runner!!, (MyApp.AppPreferences.scanInterval).toLong())
+        myHandler.postDelayed(runner!!, (AppPreferences.scanInterval).toLong())
     }
 
     /**
@@ -400,7 +398,7 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection, Lifecyc
                                         lastBroadcast = System.currentTimeMillis()
 
                                         // Save this alert to the database log
-                                        while(logEntries.size > MyApp.AppPreferences.maxLogEntries) {
+                                        while(logEntries.size > AppPreferences.maxLogEntries) {
                                             deleteLogEntriesUseCase.execute(logEntries[0])
                                         }
                                         insertLogEntryUseCase.execute(triggeredPid)
@@ -447,8 +445,8 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection, Lifecyc
      */
     private fun doBroadcast(pid: FullPid) {
 
-        val intent = Intent(getString(R.string.broadcast_preamble, pid.getBroadcastAction()))
-        intent.putExtra(getString(R.string.broadcast_preamble, pid.getBroadcastAction()), pid.getValue())
+        val intent = Intent(getString(R.string.fully_qualified_broadcast, pid.getBroadcastAction()))
+        intent.putExtra(getString(R.string.fully_qualified_broadcast, pid.getBroadcastAction()), pid.getValue())
         sendBroadcast(intent)
         notifs.update(
             getString(R.string.default_notif_title),
@@ -470,13 +468,14 @@ open class PidMonitoringService : LifecycleService(), ServiceConnection, Lifecyc
     private fun doDefaultBroadcast() {
         try {
             val action: String = if (torqueService?.isConnectedToECU == true) {
-                getString(R.string.broadcast_preamble, MyApp.AppPreferences.connectedToEcu)
+                getString(R.string.fully_qualified_broadcast, AppPreferences.ecuConnectedBroadcastAction)
             } else {
-                getString(R.string.broadcast_preamble, MyApp.AppPreferences.disconnectedFromEcu)
+                getString(R.string.fully_qualified_broadcast, AppPreferences.ecuDisconnectedBroadcastAction)
             }
             serviceMessenger.publishDefaultBroadcastAction(action)
             val intent = Intent(action)
             sendBroadcast(intent)
+            Log.v(TAG, "doDefaultBroadcast: Broadcast sent: $action")
         } catch (exception:DeadObjectException) {
             Log.w(TAG, "-= =============================================================== =-")
             Log.w(TAG, " -= getAndProcessTorquePids failed with DeadObjectException. Pretty " +

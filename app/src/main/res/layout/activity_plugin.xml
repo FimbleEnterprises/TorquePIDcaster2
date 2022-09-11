@@ -7,11 +7,21 @@
     android:layout_height="match_parent"><!--
     android:paddingTop="?attr/actionBarSize"-->
 
+    <!-- TEST ADD ID: ca-app-pub-3940256099942544/6300978111 -->
+    <!-- ACTUAL ADD ID: ca-app-pub-4244925080834893/9763037587 -->
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adView_top"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        app:adSize="BANNER"
+        app:adUnitId="ca-app-pub-4244925080834893/9763037587" />
+
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/switchService"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
+        android:layout_below="@id/adView_top"
         android:layout_marginStart="5dp"
         android:layout_marginTop="5dp"
         android:layout_marginEnd="5dp"
@@ -36,13 +46,21 @@
         android:id="@+id/nav_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="0dp"
+        android:layout_above="@id/adView_bottom"
         android:layout_marginEnd="0dp"
         android:background="?android:attr/windowBackground"
         android:theme="@style/BottomNavigationTheme"
         app:menu="@menu/bottom_nav_menu" >
-
     </com.google.android.material.bottomnavigation.BottomNavigationView>
+
+    <!-- TEST ADD ID: ca-app-pub-3940256099942544/6300978111 -->
+    <!-- ACTUAL ADD ID: ca-app-pub-4244925080834893/9493227238 -->
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adView_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:adSize="BANNER"
+        app:adUnitId="ca-app-pub-4244925080834893/9493227238" />
 
 </RelativeLayout>

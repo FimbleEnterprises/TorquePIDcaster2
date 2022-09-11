@@ -47,11 +47,21 @@
             app:summary="@string/default_broadcast_summary_connected"
             app:defaultValue="@string/when_connected_broadcast_value" />
 
+        <Preference
+            app:title="@string/pref_copy_to_clipboard"
+            android:summary="@string/pref_copy_to_clipboard_summary"
+            app:key="PREF_COPY_ECU_CONN_CLIPBOARD" />
+
         <EditTextPreference
             app:key="PREF_WHILE_DISCONNECTED_ACTION"
             app:title="@string/when_disconnected_broadcast"
             app:summary="@string/default_broadcast_summary_disconnected"
             app:defaultValue="@string/when_disconnected_broadcast_value"  />
+
+        <Preference
+            app:title="@string/pref_copy_to_clipboard"
+            android:summary="@string/pref_copy_to_clipboard_summary"
+            app:key="PREF_COPY_ECU_DISCONN_CLIPBOARD" />
 
     </PreferenceCategory>
 

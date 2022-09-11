@@ -6,7 +6,6 @@ import androidx.room.PrimaryKey
 import com.fimbleenterprises.torquepidcaster.R
 import com.fimbleenterprises.torquepidcaster.util.Helpers
 import org.joda.time.DateTime
-import java.sql.RowId
 
 /**
  * Represents an event where a saved PID's threshold for broadcast was met.  This
@@ -42,7 +41,7 @@ data class TriggeredPid(
      * Returns both the action stipulated by the user as well as the preamble.
      */
     fun showFullBroadcast(context: Context): String {
-        return context.getString(R.string.broadcast_preamble, this.broadcastAction)
+        return context.getString(R.string.fully_qualified_broadcast, this.broadcastAction)
     }
     
 }

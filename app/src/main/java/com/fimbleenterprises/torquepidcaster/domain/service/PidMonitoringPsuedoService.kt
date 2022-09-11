@@ -260,8 +260,8 @@ class PidMonitoringPsuedoService(private val context: Context) : AppCompatActivi
      */
     private fun doBroadcast(pid: FullPid) {
 
-        val intent = Intent(context.getString(R.string.broadcast_preamble, pid.getBroadcastAction()))
-        intent.putExtra(context.getString(R.string.broadcast_preamble, pid.getBroadcastAction()), pid.getValue())
+        val intent = Intent(context.getString(R.string.fully_qualified_broadcast, pid.getBroadcastAction()))
+        intent.putExtra(context.getString(R.string.fully_qualified_broadcast, pid.getBroadcastAction()), pid.getValue())
         context.sendBroadcast(intent)
         lastBroadcast = System.currentTimeMillis()
         /*notifs.update(

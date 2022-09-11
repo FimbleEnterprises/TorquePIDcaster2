@@ -24,6 +24,7 @@ import com.fimbleenterprises.torquepidcaster.presentation.AddAlarmDialog
 import com.fimbleenterprises.torquepidcaster.presentation.MyYesNoDialog
 import com.fimbleenterprises.torquepidcaster.presentation.adapters.PIDsAdapter
 import com.fimbleenterprises.torquepidcaster.presentation.viewmodel.MainViewModel
+import com.google.android.gms.ads.AdView
 import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.android.synthetic.main.fragment_choose_pids.*
@@ -39,7 +40,7 @@ class ChoosePidsFragment : Fragment() {
     private lateinit var binding: FragmentChoosePidsBinding
     private lateinit var viewmodel: MainViewModel
     private var mFirebaseAnalytics: FirebaseAnalytics? = null
-
+    lateinit var mAdView : AdView
     @Inject lateinit var adapter: PIDsAdapter
     private var isLoading = false
     private var isScrolling = false
@@ -118,6 +119,61 @@ class ChoosePidsFragment : Fragment() {
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
+    }
+
+    private fun startObservingLiveData() {
+
+        viewmodel.forceRedraw.observe(viewLifecycleOwner) {
+            adapter.differ.submitList(it)
+            adapter.notifyItemRangeChanged(0, adapter.differ.currentList.size - 1)
+        }
+
+        // The listview gets janky when it updates so frequently so ideally we only want to update
+        // it when its empty, or the user wants to see real-time values and it is not currently
+        // being scrolled.
+        viewmodel.allPids.observe(viewLifecycleOwner) {
+            if (
+                viewmodel.showRealtimeValues.value == true && !isScrolling && !viewmodel.isFiltering
+            ) {
+                adapter.differ.submitList(it)
+            }
+
+            if (adapter.itemCount == 0 && !viewmodel.isFiltering) {
+                adapter.differ.submitList(it)
+            }
+
+            if (adapter.differ.currentList.size != it.size && !viewmodel.isFiltering &&
+                !isScrolling) {
+                adapter.differ.submitList(it)
+            }
+        }
+
+        // Should only update when user sends a query to viewmodel.filterPidsByName(query)
+        viewmodel.filteredPids.observe(viewLifecycleOwner) {
+
+            if (viewmodel.isFiltering && viewmodel.showRealtimeValues.value == true && !isScrolling) {
+                adapter.differ.submitList(it)
+            }
+
+            if (viewmodel.isFiltering && adapter.itemCount != it.size && !isScrolling) {
+                adapter.differ.submitList(it)
+            }
+        }
+
+        // Switch for the user to indicate whether or not we are going to show values in the listview.
+        viewmodel.showRealtimeValues.observeForever { isChecked ->
+            // Below code will run on a background thread from a shared pool of threads created
+            // as needed, on-demand
+            binding.swtchRealtimeValues.isChecked = isChecked
+            adapter.setShowValues(isChecked)
+            try {
+                adapter.notifyItemRangeChanged(0, viewmodel.allPids.value!!.size)
+            } catch (exception:Exception) {
+                Log.e(TAG, "startObservingLiveData: ${exception.localizedMessage}"
+                    , exception)
+
+            }
+        }
     }
 
     override fun onDestroyView() {
@@ -223,7 +279,8 @@ class ChoosePidsFragment : Fragment() {
      * This is the dialog the user will use to create an alarm and set its parameters.
      */
     private fun showAlarmDialog(clickedPid: FullPid, pos: Int) {
-
+        binding.searchview.setQuery(null, false)
+        binding.searchview.isIconified = true
         val alarmDialog = AddAlarmDialog(requireContext(), clickedPid)
         alarmDialog.run {
             create()
@@ -281,65 +338,6 @@ class ChoosePidsFragment : Fragment() {
             }) // listener
             show()
         } // dialog
-    }
-
-    private fun startObservingLiveData() {
-
-        viewmodel.forceRedraw.observe(viewLifecycleOwner) {
-            adapter.differ.submitList(it)
-            adapter.notifyItemRangeChanged(0, adapter.differ.currentList.size - 1)
-        }
-
-        // The listview gets janky when it updates so frequently so ideally we only want to update
-        // it when its empty, or the user wants to see real-time values and it is not currently
-        // being scrolled.
-        viewmodel.allPids.observe(viewLifecycleOwner) {
-            if (
-                viewmodel.showRealtimeValues.value == true &&
-                !isScrolling &&
-                !viewmodel.isFiltering
-            ) {
-                adapter.differ.submitList(it)
-            }
-
-            if (adapter.itemCount == 0 && !viewmodel.isFiltering) {
-                // adapter.setShowValues(MyApp.AppPreferences.showValuesInListView)
-                adapter.differ.submitList(it)
-            }
-
-            if (adapter.differ.currentList.size != it.size && !viewmodel.isFiltering &&
-                !isScrolling) {
-                adapter.differ.submitList(it)
-            }
-        }
-
-        // Should only update when user sends a query to viewmodel.filterPidsByName(query)
-        viewmodel.filteredPids.observe(viewLifecycleOwner) {
-
-            if (viewmodel.isFiltering && viewmodel.showRealtimeValues.value == true && !isScrolling) {
-                adapter.differ.submitList(it)
-            }
-
-            if (adapter.itemCount != it.size && !isScrolling) {
-                Log.i(TAG, "-= ${adapter.itemCount} vs. ${it.size} =-")
-                adapter.differ.submitList(it)
-            }
-        }
-
-        // Switch for the user to indicate whether or not we are going to show values in the listview.
-        viewmodel.showRealtimeValues.observeForever { isChecked ->
-            // Below code will run on a background thread from a shared pool of threads created
-            // as needed, on-demand
-            binding.swtchRealtimeValues.isChecked = isChecked
-            adapter.setShowValues(isChecked)
-            try {
-                adapter.notifyItemRangeChanged(0, viewmodel.allPids.value!!.size)
-            } catch (exception:Exception) {
-                Log.e(TAG, "startObservingLiveData: ${exception.localizedMessage}"
-                    , exception)
-
-            }
-        }
     }
 
     private val onScrollListener = object : RecyclerView.OnScrollListener() {
